@@ -1,123 +1,55 @@
-# Hike Registration Website
+# Pārgājiena reģistrācijas forma
 
-A standalone Next.js registration website for a hike organised in 3 cities with 3 route distances: 5 km, 14 km, and 22 km.
+Vienkārša Next.js lapa pieteikšanās formai latviešu valodā.
 
-The design is prepared in a strong sports-event style inspired by the public BeActive Latvia website structure: clear navigation, large campaign hero, statistics blocks, distance cards, registration form, and footer/partner area.
+## Lauki
 
-## What is included
+- Pilsēta: Liepāja, Smiltene, Ilūkste
+- Distance pēc izvēlētās pilsētas:
+  - Liepāja: 5 km, 14 km, 22 km
+  - Smiltene: 7 km, 13 km, 21 km
+  - Ilūkste: 5 km, 12 km, 19 km
+- Komandas nosaukums
+- Komandas pilsēta / novads
+- Komandas kapteiņa vārds, uzvārds
+- Kapteiņa e-pasts
+- Kapteiņa tālrunis
+- Līdz 4 papildu dalībniekiem
 
-- Standalone Next.js website, ready for Vercel or GitHub upload
-- Registration form with:
-  - City of participation
-  - Distance: 5 km / 14 km / 22 km
-  - Team name
-  - Team city / municipality
-  - Captain name
-  - Captain email
-  - Captain phone number
-  - Up to 4 additional participants
-  - Data consent checkbox
-  - Accuracy confirmation checkbox
-- Configurable city names and content in `app/content.ts`
-- API route for form submission in `app/api/register/route.ts`
-- Environment variable support for external storage endpoint
+## Pieteikumu saglabāšana
 
-## How to edit city names
-
-Open:
-
-```txt
-app/content.ts
-```
-
-Replace:
-
-```ts
-participationCities: ['City 1', 'City 2', 'City 3'],
-```
-
-with the actual city names, for example:
-
-```ts
-participationCities: ['Riga', 'Liepāja', 'Daugavpils'],
-```
-
-## How to store submissions
-
-The form is already connected to a local API route:
+Forma sūta datus uz:
 
 ```txt
 /api/register
 ```
 
-To actually save registrations, add an external POST endpoint in Vercel as an environment variable:
+Lai pieteikumi tiktu saglabāti Google Sheets, Formspree, Airtable, Make/Zapier vai citā risinājumā, Vercel iestatījumos pievienojiet:
 
 ```txt
 REGISTRATION_ENDPOINT=https://your-endpoint-here
 ```
 
-You can use:
+Ja `REGISTRATION_ENDPOINT` nav norādīts, forma darbojas testa režīmā un pieteikumus nesaglabā.
 
-- Google Apps Script + Google Sheets
-- Formspree
-- Airtable
-- Make/Zapier webhook
-- Your own database endpoint
+## Google Sheets
 
-If `REGISTRATION_ENDPOINT` is empty, the form will show a demo-mode message and submissions will not be stored.
-
-## Google Sheets option
-
-A simple Google Apps Script example is included in:
+Piemērs Google Apps Script savienojumam ir failā:
 
 ```txt
 google-apps-script-example.js
 ```
 
-Use it to connect the website to a Google Sheet.
-
-## Run locally
+## Palaišana lokāli
 
 ```bash
 npm install
 npm run dev
 ```
 
-Then open:
+## Vercel
 
-```txt
-http://localhost:3000
-```
-
-## Deploy on Vercel
-
-1. Upload this folder to GitHub.
-2. Import the repository in Vercel.
-3. Add `REGISTRATION_ENDPOINT` in Vercel project settings if you want to store form submissions.
+1. Augšupielādējiet projekta mapi GitHub.
+2. Importējiet GitHub repozitoriju Vercel.
+3. Pievienojiet `REGISTRATION_ENDPOINT`, ja nepieciešama pieteikumu saglabāšana.
 4. Deploy.
-
-## Main visual settings
-
-The main colours are in:
-
-```txt
-app/globals.css
-```
-
-At the top of the file, edit:
-
-```css
-:root {
-  --blue: #0057b8;
-  --green: #00a651;
-  --yellow: #ffd200;
-}
-```
-
-## Vercel build note
-
-This version includes `app/styles.d.ts` to declare CSS imports for TypeScript. This avoids the Vercel error:
-
-`Cannot find module or type declarations for side-effect import of './globals.css'.`
-
-The project also uses a patched Next.js 14 version (`14.2.35`) instead of `14.2.23`.

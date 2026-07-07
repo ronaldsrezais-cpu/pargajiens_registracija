@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { cityDistances, type ParticipationCity } from '../../content';
 
 type RegistrationPayload = {
   participationCity?: string;
@@ -13,7 +14,6 @@ type RegistrationPayload = {
   participant3?: string;
   participant4?: string;
   dataConsent?: boolean;
-  accuracyConfirmation?: boolean;
 };
 
 const requiredFields: Array<keyof RegistrationPayload> = [
@@ -26,6 +26,10 @@ const requiredFields: Array<keyof RegistrationPayload> = [
   'captainPhone',
 ];
 
+function isParticipationCity(value: string | undefined): value is ParticipationCity {
+  return Boolean(value && Object.keys(cityDistances).includes(value));
+}
+
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as RegistrationPayload;
@@ -33,14 +37,28 @@ export async function POST(request: Request) {
     const missingFields = requiredFields.filter((field) => !body[field]);
     if (missingFields.length > 0) {
       return NextResponse.json(
-        { ok: false, message: 'Please complete all required fields.', missingFields },
+        { ok: false, message: 'Lūdzu, aizpildiet visus obligātos laukus.', missingFields },
         { status: 400 }
       );
     }
 
-    if (!body.dataConsent || !body.accuracyConfirmation) {
+    if (!isParticipationCity(body.participationCity)) {
       return NextResponse.json(
-        { ok: false, message: 'Please confirm consent and information accuracy.' },
+        { ok: false, message: 'Lūdzu, izvēlieties derīgu pilsētu.' },
+        { status: 400 }
+      );
+    }
+
+    if (!cityDistances[body.participationCity].includes(String(body.distance))) {
+      return NextResponse.json(
+        { ok: false, message: 'Lūdzu, izvēlieties derīgu distanci izvēlētajai pilsētai.' },
+        { status: 400 }
+      );
+    }
+
+    if (!body.dataConsent) {
+      return NextResponse.json(
+        { ok: false, message: 'Lūdzu, apstipriniet datu izmantošanu pieteikuma apstrādei.' },
         { status: 400 }
       );
     }
@@ -51,8 +69,7 @@ export async function POST(request: Request) {
       return NextResponse.json({
         ok: true,
         demoMode: true,
-        message:
-          'Registration received in demo mode. Add REGISTRATION_ENDPOINT in Vercel environment variables to store submissions.',
+        message: 'Pieteikums saņemts testa režīmā. Lai saglabātu pieteikumus, Vercel jāpievieno REGISTRATION_ENDPOINT.',
       });
     }
 
@@ -64,15 +81,15 @@ export async function POST(request: Request) {
 
     if (!response.ok) {
       return NextResponse.json(
-        { ok: false, message: 'The registration could not be saved. Please try again later.' },
+        { ok: false, message: 'Pieteikumu neizdevās saglabāt. Lūdzu, mēģiniet vēlāk.' },
         { status: 502 }
       );
     }
 
-    return NextResponse.json({ ok: true, message: 'Thank you! Your team registration has been submitted.' });
-  } catch (error) {
+    return NextResponse.json({ ok: true, message: 'Paldies! Pieteikums ir saņemts.' });
+  } catch {
     return NextResponse.json(
-      { ok: false, message: 'Something went wrong. Please check the form and try again.' },
+      { ok: false, message: 'Radās kļūda. Lūdzu, pārbaudiet formu un mēģiniet vēlreiz.' },
       { status: 500 }
     );
   }

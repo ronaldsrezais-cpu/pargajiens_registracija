@@ -2,13 +2,13 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Hike Registration',
-  description: 'Register your team for the hike in one of three cities.',
+  title: 'Pārgājiena reģistrācija',
+  description: 'Komandas pieteikšanās pārgājienam Liepājā, Smiltenē vai Ilūkstē.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="lv">
       <body>{children}</body>
     </html>
   );
