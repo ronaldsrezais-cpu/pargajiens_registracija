@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cityDistances, participationCities, type ParticipationCity } from '../../content';
+import { GOOGLE_APPS_SCRIPT_URL } from '../../settings';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,7 +44,12 @@ function isValidStatsResponse(data: ExternalStatsResponse) {
 
 export async function GET() {
   try {
-    const endpoint = process.env.STATS_ENDPOINT || process.env.REGISTRATION_ENDPOINT;
+    const configuredEndpoint =
+      GOOGLE_APPS_SCRIPT_URL && GOOGLE_APPS_SCRIPT_URL !== 'PASTE_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE'
+        ? GOOGLE_APPS_SCRIPT_URL
+        : undefined;
+
+    const endpoint = process.env.STATS_ENDPOINT || process.env.REGISTRATION_ENDPOINT || configuredEndpoint;
 
     if (!endpoint) {
       return NextResponse.json({

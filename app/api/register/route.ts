@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cityDistances, type ParticipationCity } from '../../content';
+import { GOOGLE_APPS_SCRIPT_URL } from '../../settings';
 
 type RegistrationPayload = {
   participationCity?: string;
@@ -63,13 +64,16 @@ export async function POST(request: Request) {
       );
     }
 
-    const endpoint = process.env.REGISTRATION_ENDPOINT;
+    const endpoint =
+      GOOGLE_APPS_SCRIPT_URL && GOOGLE_APPS_SCRIPT_URL !== 'PASTE_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE'
+        ? GOOGLE_APPS_SCRIPT_URL
+        : process.env.REGISTRATION_ENDPOINT;
 
     if (!endpoint) {
       return NextResponse.json({
         ok: true,
         demoMode: true,
-        message: 'Pieteikums saņemts testa režīmā. Lai saglabātu pieteikumus, Vercel jāpievieno REGISTRATION_ENDPOINT.',
+        message: 'Pieteikums saņemts testa režīmā. Lai saglabātu pieteikumus, app/settings.ts jāievieto Google Apps Script Web App URL.',
       });
     }
 

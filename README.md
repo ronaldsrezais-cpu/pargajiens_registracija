@@ -24,39 +24,53 @@ Vienkārša Next.js lapa pieteikšanās formai latviešu valodā ar skaitītāju
 
 Zem formas ir skaitītājs, kas rāda reģistrēto komandu un dalībnieku skaitu katrā pilsētā un distancē. Dalībnieku skaits tiek aprēķināts kā kapteinis + aizpildītie dalībnieku lauki.
 
-Skaitītājs izmanto to pašu `REGISTRATION_ENDPOINT`. Google Apps Script piemērā ir pievienots arī `doGet()`, kas atgriež skaitītāja datus.
-
-Ja vēlaties izmantot atsevišķu adresi tikai skaitītājam, Vercel var pievienot arī:
-
-```txt
-STATS_ENDPOINT=https://your-stats-endpoint-here
-```
-
-Ja `STATS_ENDPOINT` nav norādīts, sistēma izmanto `REGISTRATION_ENDPOINT`.
+Skaitītājs izmanto to pašu Google Apps Script adresi, kas saglabā pieteikumus. Google Apps Script piemērā ir pievienots arī `doGet()`, kas atgriež skaitītāja datus.
 
 ## Pieteikumu saglabāšana
 
-Forma sūta datus uz:
+Forma sūta datus uz vietnes iekšējo adresi `/api/register`, bet Google Apps Script adrese tiek norādīta projekta failā — līdzīgi kā Home & Heart risinājumā.
+
+Atveriet failu:
 
 ```txt
-/api/register
+app/settings.ts
 ```
 
-Lai pieteikumi tiktu saglabāti Google Sheets, Formspree, Airtable, Make/Zapier vai citā risinājumā, Vercel iestatījumos pievienojiet:
+Un aizvietojiet šo tekstu:
 
 ```txt
-REGISTRATION_ENDPOINT=https://your-endpoint-here
+PASTE_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE
 ```
 
-Ja `REGISTRATION_ENDPOINT` nav norādīts, forma darbojas testa režīmā un pieteikumus nesaglabā.
+ar savu Google Apps Script Web App URL, kas beidzas ar `/exec`.
+
+Pēc tam saglabājiet izmaiņas GitHub un pārdeployojiet Vercel. Vercel Environment Variables šajā variantā nav obligātas.
+
+
+## Google Sheets pieslēgšana — tāpat kā Home & Heart variantā
+
+1. Izveidojiet Google Sheet.
+2. Tabulas pirmajā rindā ielieciet zemāk norādītās kolonnu galvenes.
+3. Google Sheet atveriet Extensions → Apps Script.
+4. Iekopējiet kodu no `apps-script/Code.gs`.
+5. Kodā aizvietojiet `PASTE_YOUR_GOOGLE_SHEET_ID_HERE` ar Google Sheet ID.
+6. Apps Script izvēlieties Deploy → New deployment → Web app.
+7. Iestatījumi:
+   - Execute as: Me
+   - Who has access: Anyone
+8. Nokopējiet Web App URL, kas beidzas ar `/exec`.
+9. Vietnes failā `app/settings.ts` aizvietojiet `PASTE_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE` ar šo URL.
+10. Saglabājiet izmaiņas GitHub un pārdeployojiet Vercel.
 
 ## Google Sheets
 
 Piemērs Google Apps Script savienojumam ir failā:
 
 ```txt
-google-apps-script-example.js
+apps-script/Code.gs
 ```
+
+Šo kodu iekopējiet Google Sheets sadaļā Extensions → Apps Script.
 
 Ieteicamās kolonnu galvenes Google Sheet tabulā:
 
@@ -79,5 +93,5 @@ npm run dev
 
 1. Augšupielādējiet projekta mapi GitHub.
 2. Importējiet GitHub repozitoriju Vercel.
-3. Pievienojiet `REGISTRATION_ENDPOINT`, ja nepieciešama pieteikumu saglabāšana un skaitītājs.
+3. Failā `app/settings.ts` ielīmējiet Google Apps Script Web App URL.
 4. Deploy.
