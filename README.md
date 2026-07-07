@@ -11,10 +11,14 @@ Vienkārša Next.js lapa pieteikšanās formai latviešu valodā.
   - Ilūkste: 5 km, 12 km, 19 km
 - Komandas nosaukums
 - Komandas pilsēta / novads
-- Komandas kapteiņa vārds, uzvārds
-- Kapteiņa e-pasts
-- Kapteiņa tālrunis
-- Līdz 4 papildu dalībniekiem
+- Dalībnieki:
+  - Kapteinis
+  - Kapteiņa e-pasts
+  - Kapteiņa tālrunis
+  - Dalībnieks 2
+  - Dalībnieks 3
+  - Dalībnieks 4
+  - Dalībnieks 5
 
 ## Pieteikumu saglabāšana
 
@@ -39,6 +43,16 @@ Piemērs Google Apps Script savienojumam ir failā:
 ```txt
 google-apps-script-example.js
 ```
+
+Ieteicamās kolonnu galvenes Google Sheet tabulā:
+
+```txt
+Submitted at | Pilsēta | Distance | Komandas nosaukums | Komandas pilsēta / novads | Kapteinis | Kapteiņa e-pasts | Kapteiņa tālrunis | Dalībnieks 2 | Dalībnieks 3 | Dalībnieks 4 | Dalībnieks 5
+```
+
+## Pieteikuma maiņa vai atsaukšana
+
+Vienkāršākajā versijā dalībnieki pieteikumu nevar paši rediģēt vai atsaukt. To var pievienot kā nākamo funkciju, izveidojot unikālu pieteikuma kodu un atsevišķu maiņas/atteikuma formu.
 
 ## Palaišana lokāli
 

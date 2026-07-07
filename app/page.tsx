@@ -8,7 +8,12 @@ type MessageState = {
   text: string;
 } | null;
 
-const memberFields = ['participant1', 'participant2', 'participant3', 'participant4'];
+const memberFields = [
+  { name: 'participant1', label: 'Dalībnieks 2' },
+  { name: 'participant2', label: 'Dalībnieks 3' },
+  { name: 'participant3', label: 'Dalībnieks 4' },
+  { name: 'participant4', label: 'Dalībnieks 5' },
+];
 
 export default function Home() {
   const [message, setMessage] = useState<MessageState>(null);
@@ -74,10 +79,7 @@ export default function Home() {
     <main className="page-shell">
       <section className="form-card" aria-labelledby="registration-title">
         <div className="form-header">
-          <div className="brand-line">
-            <span>#BeActive</span>
-            <small>pārgājiens</small>
-          </div>
+          <img className="beactive-logo" src="/beactive-logo.png" alt="#BeActive Eiropas Sporta nedēļa" />
           <h1 id="registration-title">Pieteikšanās pārgājienam</h1>
         </div>
 
@@ -119,27 +121,28 @@ export default function Home() {
             <input name="teamCity" type="text" required />
           </label>
 
-          <label>
-            Komandas kapteiņa vārds, uzvārds *
-            <input name="captainName" type="text" required />
-          </label>
-
-          <label>
-            Kapteiņa e-pasta adrese *
-            <input name="captainEmail" type="email" required />
-          </label>
-
-          <label>
-            Kapteiņa tālruņa numurs *
-            <input name="captainPhone" type="tel" required />
-          </label>
-
           <div className="members-block">
-            <h2>Papildu dalībnieki</h2>
-            {memberFields.map((field, index) => (
-              <label key={field}>
-                Dalībnieks {index + 1}
-                <input name={field} type="text" />
+            <h2>Dalībnieki</h2>
+
+            <label>
+              Kapteinis *
+              <input name="captainName" type="text" required />
+            </label>
+
+            <label>
+              Kapteiņa e-pasta adrese *
+              <input name="captainEmail" type="email" required />
+            </label>
+
+            <label>
+              Kapteiņa tālruņa numurs *
+              <input name="captainPhone" type="tel" required />
+            </label>
+
+            {memberFields.map((field) => (
+              <label key={field.name}>
+                {field.label}
+                <input name={field.name} type="text" />
               </label>
             ))}
           </div>
