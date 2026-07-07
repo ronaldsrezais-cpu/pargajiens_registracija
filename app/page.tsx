@@ -1,12 +1,31 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { cityDistances, participationCities, type ParticipationCity } from './content';
 
 type MessageState = {
   type: 'success' | 'error' | 'info';
   text: string;
 } | null;
+
+type StatsRow = {
+  city: ParticipationCity;
+  distance: string;
+  teams: number;
+  participants: number;
+};
+
+type StatsResponse = {
+  ok: boolean;
+  demoMode?: boolean;
+  message?: string;
+  totals?: {
+    teams: number;
+    participants: number;
+  };
+  rows?: StatsRow[];
+  updatedAt?: string;
+};
 
 const memberFields = [
   { name: 'participant1', label: 'Dalībnieks 2' },
@@ -15,10 +34,95 @@ const memberFields = [
   { name: 'participant4', label: 'Dalībnieks 5' },
 ];
 
+function RegistrationStats({ refreshKey }: { refreshKey: number }) {
+  const [stats, setStats] = useState<StatsResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadStats() {
+      setIsLoading(true);
+
+      try {
+        const response = await fetch('/api/stats', { cache: 'no-store' });
+        const data = (await response.json()) as StatsResponse;
+
+        if (isMounted) {
+          setStats(data);
+        }
+      } catch {
+        if (isMounted) {
+          setStats({ ok: false, message: 'Skaitītāju neizdevās ielādēt.' });
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadStats();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [refreshKey]);
+
+  const rows = stats?.rows || [];
+  const totals = stats?.totals || { teams: 0, participants: 0 };
+
+  return (
+    <section className="stats-block" aria-labelledby="stats-title">
+      <div className="stats-header">
+        <h2 id="stats-title">Reģistrējušies</h2>
+        <div className="stats-totals" aria-label="Kopējais reģistrāciju skaits">
+          <span>{totals.teams} komandas</span>
+          <span>{totals.participants} dalībnieki</span>
+        </div>
+      </div>
+
+      {isLoading && <p className="stats-note">Ielādē skaitītāju…</p>}
+
+      {!isLoading && stats && !stats.ok && (
+        <p className="stats-note">{stats.message || 'Skaitītāju neizdevās ielādēt.'}</p>
+      )}
+
+      {!isLoading && stats?.demoMode && (
+        <p className="stats-note">Skaitītājs būs aktīvs pēc datu pieslēgšanas.</p>
+      )}
+
+      {!isLoading && stats?.ok && rows.length > 0 && (
+        <div className="stats-grid">
+          {participationCities.map((city) => (
+            <div className="city-stats" key={city}>
+              <h3>{city}</h3>
+              <div className="distance-list">
+                {cityDistances[city].map((distance) => {
+                  const row = rows.find((item) => item.city === city && item.distance === distance);
+
+                  return (
+                    <div className="distance-row" key={`${city}-${distance}`}>
+                      <strong>{distance}</strong>
+                      <span>{row?.teams || 0} kom.</span>
+                      <span>{row?.participants || 0} dal.</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function Home() {
   const [message, setMessage] = useState<MessageState>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedCity, setSelectedCity] = useState<ParticipationCity | ''>('');
+  const [statsRefreshKey, setStatsRefreshKey] = useState(0);
 
   const availableDistances = selectedCity ? cityDistances[selectedCity] : [];
 
@@ -63,6 +167,8 @@ export default function Home() {
         type: result.demoMode ? 'info' : 'success',
         text: result.message || 'Paldies! Pieteikums ir saņemts.',
       });
+
+      setStatsRefreshKey((currentKey) => currentKey + 1);
 
       if (!result.demoMode) {
         form.reset();
@@ -156,6 +262,8 @@ export default function Home() {
             {isSubmitting ? 'Nosūta…' : 'Nosūtīt pieteikumu'}
           </button>
         </form>
+
+        <RegistrationStats refreshKey={statsRefreshKey} />
       </section>
     </main>
   );

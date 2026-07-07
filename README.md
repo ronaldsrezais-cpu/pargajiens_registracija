@@ -1,6 +1,6 @@
 # Pārgājiena reģistrācijas forma
 
-Vienkārša Next.js lapa pieteikšanās formai latviešu valodā.
+Vienkārša Next.js lapa pieteikšanās formai latviešu valodā ar skaitītāju zem formas.
 
 ## Lauki
 
@@ -19,6 +19,20 @@ Vienkārša Next.js lapa pieteikšanās formai latviešu valodā.
   - Dalībnieks 3
   - Dalībnieks 4
   - Dalībnieks 5
+
+## Skaitītājs
+
+Zem formas ir skaitītājs, kas rāda reģistrēto komandu un dalībnieku skaitu katrā pilsētā un distancē. Dalībnieku skaits tiek aprēķināts kā kapteinis + aizpildītie dalībnieku lauki.
+
+Skaitītājs izmanto to pašu `REGISTRATION_ENDPOINT`. Google Apps Script piemērā ir pievienots arī `doGet()`, kas atgriež skaitītāja datus.
+
+Ja vēlaties izmantot atsevišķu adresi tikai skaitītājam, Vercel var pievienot arī:
+
+```txt
+STATS_ENDPOINT=https://your-stats-endpoint-here
+```
+
+Ja `STATS_ENDPOINT` nav norādīts, sistēma izmanto `REGISTRATION_ENDPOINT`.
 
 ## Pieteikumu saglabāšana
 
@@ -65,5 +79,5 @@ npm run dev
 
 1. Augšupielādējiet projekta mapi GitHub.
 2. Importējiet GitHub repozitoriju Vercel.
-3. Pievienojiet `REGISTRATION_ENDPOINT`, ja nepieciešama pieteikumu saglabāšana.
+3. Pievienojiet `REGISTRATION_ENDPOINT`, ja nepieciešama pieteikumu saglabāšana un skaitītājs.
 4. Deploy.
