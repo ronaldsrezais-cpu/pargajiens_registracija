@@ -113,3 +113,11 @@ At the top of the file, edit:
   --yellow: #ffd200;
 }
 ```
+
+## Vercel build note
+
+This version includes `app/styles.d.ts` to declare CSS imports for TypeScript. This avoids the Vercel error:
+
+`Cannot find module or type declarations for side-effect import of './globals.css'.`
+
+The project also uses a patched Next.js 14 version (`14.2.35`) instead of `14.2.23`.
