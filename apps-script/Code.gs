@@ -554,6 +554,14 @@ function sendEmailMessage(options) {
   return false;
 }
 
+function getDeadlinePlain() {
+  return 'Pieteikšanās tiešsaistē un izmaiņu veikšana ir iespējama līdz 24. septembra plkst. 12.00. Ja izmaiņas rodas pēc šī termiņa — nebēdājiet, ikviens joprojām var droši pievienoties pārgājienam un reģistrēties uz vietas pasākuma dienā reģistrācijas punktā.';
+}
+
+function getDeadlineHtml() {
+  return '<p>Pieteikšanās tiešsaistē un izmaiņu veikšana ir iespējama līdz <strong>24. septembra plkst. 12.00</strong>. Ja izmaiņas rodas pēc šī termiņa — nebēdājiet, ikviens joprojām var droši pievienoties pārgājienam un reģistrēties uz vietas pasākuma dienā reģistrācijas punktā.</p>';
+}
+
 function sendCreateEmail(data, editCode, editLink) {
   try {
     const email = String(data.captainEmail || '').trim();
@@ -572,8 +580,10 @@ function sendCreateEmail(data, editCode, editLink) {
       '',
       'Komandu kapteiņi pirms došanās distancē saņems gan distances karti drukātā formātā, gan GPX formātā. GPX fails tiks nosūtīts uz e-pastu pārgājiena nedēļas piektdienā.',
       '',
+      getDeadlinePlain(),
+      '',
       `Pieteikuma labošanas kods: ${editCode}`,
-      editLink ? `Labot vai atsaukt pieteikumu: ${editLink}` : '',
+      editLink ? 'Labot vai atsaukt pieteikumu: izmantojiet e-pastā esošo saiti.' : '',
       getClosingPlain(data.participationCity),
     ].filter(Boolean).join('\n');
 
@@ -583,8 +593,9 @@ function sendCreateEmail(data, editCode, editLink) {
       <strong>Pilsēta:</strong> ${escapeHtml(data.participationCity || '')}<br>
       <strong>Distance:</strong> ${escapeHtml(normaliseDistance(data.distance))}</p>
       <p>Komandu kapteiņi pirms došanās distancē saņems gan distances karti drukātā formātā, gan GPX formātā. GPX fails tiks nosūtīts uz e-pastu pārgājiena nedēļas piektdienā.</p>
+      ${getDeadlineHtml()}
       <p><strong>Pieteikuma labošanas kods:</strong> ${escapeHtml(editCode)}</p>
-      ${editLink ? `<p><a href="${escapeHtml(editLink)}">Labot vai atsaukt pieteikumu</a></p><p style="word-break: break-all;">${escapeHtml(editLink)}</p>` : '<p>Atveriet mājaslapas sadaļu /labot un ievadiet pieteikuma labošanas kodu.</p>'}
+      ${editLink ? `<p><a href="${escapeHtml(editLink)}">Labot vai atsaukt pieteikumu</a></p>` : '<p>Atveriet mājaslapas sadaļu /labot un ievadiet pieteikuma labošanas kodu.</p>'}
       ${getClosingHtml(data.participationCity, data.editBaseUrl || '')}
     `;
 

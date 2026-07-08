@@ -192,7 +192,7 @@ export default function Home() {
         type: result.demoMode ? 'info' : 'success',
         text:
           result.message ||
-          'Paldies! Pieteikums ir saņemts.\nApstiprinājums un saite, kā arī unikālais kods, pieteikuma labošanai vai atsaukšanai nosūtīta uz kapteiņa e-pastu.',
+          'Paldies! Pieteikums ir saņemts.\nDalības apstiprinājums, kā arī unikālais kods pieteikuma labošanai vai atsaukšanai ir nosūtīti uz kapteiņa e-pastu.\n\nPieteikšanās tiešsaistē un izmaiņu veikšana ir iespējama līdz 24. septembra plkst. 12.00. Ja izmaiņas rodas pēc šī termiņa — nebēdājiet, ikviens joprojām var droši pievienoties pārgājienam un reģistrēties uz vietas pasākuma dienā reģistrācijas punktā.',
         editLink: result.editLink || managePageUrl,
         editCode: result.editCode,
       });
@@ -223,16 +223,6 @@ export default function Home() {
           {message && (
             <div className={`form-message ${message.type}`}>
               <p>{message.text}</p>
-              {message.type === 'success' && (
-                <div className="message-actions message-actions-vertical">
-                  <div className="message-link-block">
-                    <span>Papildus saitē:</span>
-                    <a className="message-url" href={managePageUrl}>
-                      {managePageUrl}
-                    </a>
-                  </div>
-                </div>
-              )}
             </div>
           )}
 
@@ -303,9 +293,9 @@ export default function Home() {
                   type="button"
                   className="remove-participant-button"
                   onClick={() => removeAdditionalParticipant(index)}
-                  aria-label={`Noņemt dalībnieku ${index + 2}`}
+                  aria-label={`Dzēst dalībnieku ${index + 2}`}
                 >
-                  Noņemt
+                  ×
                 </button>
               </div>
             ))}
@@ -327,7 +317,7 @@ export default function Home() {
             {isSubmitting ? 'Nosūta…' : 'Nosūtīt pieteikumu'}
           </button>
 
-          <a className="manage-link" href="/labot">Jau pieteicāties? Labot vai atsaukt pieteikumu</a>
+          <a className="manage-link" href="/labot">Labot vai atsaukt pieteikumu</a>
         </form>
 
         <RegistrationStats refreshKey={statsRefreshKey} />

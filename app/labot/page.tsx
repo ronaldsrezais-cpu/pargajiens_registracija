@@ -343,9 +343,9 @@ export default function ManageRegistrationPage() {
                       type="button"
                       className="remove-participant-button"
                       onClick={() => removeParticipant(index)}
-                      aria-label={`Noņemt dalībnieku ${index + 2}`}
+                      aria-label={`Dzēst dalībnieku ${index + 2}`}
                     >
-                      Noņemt
+                      ×
                     </button>
                   )}
                 </div>

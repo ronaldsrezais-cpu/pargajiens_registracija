@@ -513,8 +513,9 @@ select:disabled {
 
 .participant-field {
   display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 10px;
-  align-content: start;
+  align-items: end;
 }
 
 .participant-field label {
@@ -522,23 +523,25 @@ select:disabled {
 }
 
 .remove-participant-button {
-  width: fit-content;
-  min-height: 38px;
-  padding: 7px 16px;
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0;
   border: 2px solid var(--black);
   border-radius: 999px;
   background: var(--white);
   color: var(--black);
-  font-weight: 800;
-  text-transform: uppercase;
+  font-size: 22px;
+  line-height: 1;
+  font-weight: 900;
   cursor: pointer;
-  box-shadow: 4px 4px 0 rgba(255, 75, 0, 0.45);
+  box-shadow: 3px 3px 0 rgba(255, 75, 0, 0.45);
   transition: transform 160ms ease, box-shadow 160ms ease;
 }
 
 .remove-participant-button:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 6px 6px 0 rgba(255, 75, 0, 0.45);
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0 rgba(255, 75, 0, 0.45);
 }
 
 .remove-participant-button:disabled {
