@@ -6,6 +6,8 @@ import { cityDistances, participationCities, type ParticipationCity } from './co
 type MessageState = {
   type: 'success' | 'error' | 'info';
   text: string;
+  editLink?: string;
+  editCode?: string;
 } | null;
 
 type StatsRow = {
@@ -165,7 +167,9 @@ export default function Home() {
 
       setMessage({
         type: result.demoMode ? 'info' : 'success',
-        text: result.message || 'Paldies! Pieteikums ir saņemts.',
+        text: result.message || 'Paldies! Pieteikums ir saņemts. Komandu kapteiņi pirms došanās distancē saņems gan distances karti drukātā formātā, gan GPX formātā. GPX fails tiks nosūtīts uz e-pastu pārgājiena nedēļas piektdienā.',
+        editLink: result.editLink || '/labot',
+        editCode: result.editCode,
       });
 
       setStatsRefreshKey((currentKey) => currentKey + 1);
@@ -190,7 +194,17 @@ export default function Home() {
         </div>
 
         <form className="registration-form" onSubmit={handleSubmit}>
-          {message && <div className={`form-message ${message.type}`}>{message.text}</div>}
+          {message && (
+            <div className={`form-message ${message.type}`}>
+              <p>{message.text}</p>
+              {message.type === 'success' && (
+                <div className="message-actions">
+                  <a className="message-link" href={message.editLink || '/labot'}>Labot vai atsaukt pieteikumu</a>
+                  {message.editCode && <span className="message-code">Kods: {message.editCode}</span>}
+                </div>
+              )}
+            </div>
+          )}
 
           <label>
             Pilsēta *
@@ -261,6 +275,8 @@ export default function Home() {
           <button type="submit" className="submit-button" disabled={isSubmitting}>
             {isSubmitting ? 'Nosūta…' : 'Nosūtīt pieteikumu'}
           </button>
+
+          <a className="manage-link" href="/labot">Jau pieteicāties? Labot vai atsaukt pieteikumu</a>
         </form>
 
         <RegistrationStats refreshKey={statsRefreshKey} />

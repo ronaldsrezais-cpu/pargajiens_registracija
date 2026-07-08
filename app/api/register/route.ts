@@ -17,6 +17,14 @@ type RegistrationPayload = {
   dataConsent?: boolean;
 };
 
+type AppsScriptResponse = {
+  ok?: boolean;
+  message?: string;
+  editCode?: string;
+  editLink?: string;
+  emailSent?: boolean;
+};
+
 const requiredFields: Array<keyof RegistrationPayload> = [
   'participationCity',
   'distance',
@@ -29,6 +37,17 @@ const requiredFields: Array<keyof RegistrationPayload> = [
 
 function isParticipationCity(value: string | undefined): value is ParticipationCity {
   return Boolean(value && Object.keys(cityDistances).includes(value));
+}
+
+function getEndpoint() {
+  return GOOGLE_APPS_SCRIPT_URL && GOOGLE_APPS_SCRIPT_URL !== 'PASTE_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE'
+    ? GOOGLE_APPS_SCRIPT_URL
+    : process.env.REGISTRATION_ENDPOINT;
+}
+
+function getEditBaseUrl(request: Request) {
+  const origin = request.headers.get('origin') || new URL(request.url).origin;
+  return `${origin}/labot`;
 }
 
 export async function POST(request: Request) {
@@ -64,10 +83,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const endpoint =
-      GOOGLE_APPS_SCRIPT_URL && GOOGLE_APPS_SCRIPT_URL !== 'PASTE_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE'
-        ? GOOGLE_APPS_SCRIPT_URL
-        : process.env.REGISTRATION_ENDPOINT;
+    const endpoint = getEndpoint();
 
     if (!endpoint) {
       return NextResponse.json({
@@ -80,7 +96,12 @@ export async function POST(request: Request) {
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...body, submittedAt: new Date().toISOString() }),
+      body: JSON.stringify({
+        ...body,
+        action: 'create',
+        submittedAt: new Date().toISOString(),
+        editBaseUrl: getEditBaseUrl(request),
+      }),
     });
 
     if (!response.ok) {
@@ -90,7 +111,25 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json({ ok: true, message: 'Paldies! Pieteikums ir saņemts.' });
+    const result = (await response.json()) as AppsScriptResponse;
+
+    if (!result.ok) {
+      return NextResponse.json(
+        { ok: false, message: result.message || 'Pieteikumu neizdevās saglabāt. Lūdzu, mēģiniet vēlāk.' },
+        { status: 502 }
+      );
+    }
+
+    const emailNote = result.emailSent === false
+      ? ' Pieteikums ir saglabāts, bet apstiprinājuma e-pastu neizdevās nosūtīt. Ja nepieciešams, sazinieties ar organizatoriem.'
+      : ' Apstiprinājums un saite pieteikuma labošanai vai atsaukšanai nosūtīta uz kapteiņa e-pastu.';
+
+    return NextResponse.json({
+      ok: true,
+      message: `Paldies! Pieteikums ir saņemts. Komandu kapteiņi pirms došanās distancē saņems gan distances karti drukātā formātā, gan GPX formātā. GPX fails tiks nosūtīts uz e-pastu pārgājiena nedēļas piektdienā.${emailNote}`,
+      editCode: result.editCode,
+      editLink: result.editLink,
+    });
   } catch {
     return NextResponse.json(
       { ok: false, message: 'Radās kļūda. Lūdzu, pārbaudiet formu un mēģiniet vēlreiz.' },

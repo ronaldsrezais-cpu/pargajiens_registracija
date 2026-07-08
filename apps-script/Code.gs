@@ -1,22 +1,53 @@
-// Google Apps Script example for saving website form submissions to Google Sheets
-// and returning public registration counters to the website.
+// Google Apps Script for the #BeActive hike registration form.
+//
+// What it does:
+// - saves new registrations to Google Sheets;
+// - creates a unique edit code for every registration;
+// - emails the captain a link to edit or cancel the registration;
+// - allows the website to update or cancel an existing registration;
+// - returns public counter data to the website.
 //
 // Setup:
-// 1. Create a Google Sheet.
-// 2. Open Extensions -> Apps Script.
-// 3. Paste this code.
-// 4. Replace SHEET_ID with your spreadsheet ID.
-// 5. Deploy as Web app.
-// 6. Add the Web app URL in Vercel as REGISTRATION_ENDPOINT.
+// 1. Replace SHEET_ID with your Google Sheet ID only, not the full Sheet URL.
+// 2. Save the script.
+// 3. Run authorizeScript() once and approve permissions.
+// 4. Deploy as Web app: Execute as Me, Who has access Anyone.
+// 5. Use the /exec URL in app/settings.ts on the website.
 
 const SHEET_ID = 'PASTE_YOUR_GOOGLE_SHEET_ID_HERE';
 const SHEET_NAME = 'Registrations';
+const SENDER_EMAIL = 'latvijassportafederacijupadome@gmail.com';
+const SENDER_NAME = 'Latvijas Sporta federāciju padome';
+const BEACTIVE_WEBSITE_URL = 'https://beactive.lv/';
+
+const STATUSES = {
+  ACTIVE: 'Aktīvs',
+  CANCELLED: 'Atsaukts',
+};
 
 const CITIES = {
   'Liepāja': ['5 km', '14 km', '22 km'],
   'Smiltene': ['7 km', '13 km', '21 km'],
   'Ilūkste': ['5 km', '12 km', '19 km'],
 };
+
+const HEADERS = [
+  'Pieteikuma kods',
+  'Statuss',
+  'Submitted at',
+  'Updated at',
+  'Pilsēta',
+  'Distance',
+  'Komandas nosaukums',
+  'Komandas pilsēta / novads',
+  'Kapteinis',
+  'Kapteiņa e-pasts',
+  'Kapteiņa tālrunis',
+  'Dalībnieks 2',
+  'Dalībnieks 3',
+  'Dalībnieks 4',
+  'Dalībnieks 5',
+];
 
 function jsonResponse(data) {
   return ContentService
@@ -32,7 +63,94 @@ function getSheet() {
     sheet = spreadsheet.insertSheet(SHEET_NAME);
   }
 
+  ensureHeaders(sheet);
   return sheet;
+}
+
+function ensureHeaders(sheet) {
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(HEADERS);
+    sheet.setFrozenRows(1);
+    return;
+  }
+
+  const lastColumn = Math.max(sheet.getLastColumn(), 1);
+  const currentHeaders = sheet.getRange(1, 1, 1, lastColumn).getValues()[0].map(String);
+  let headersChanged = false;
+
+  HEADERS.forEach((header) => {
+    if (!currentHeaders.includes(header)) {
+      currentHeaders.push(header);
+      headersChanged = true;
+    }
+  });
+
+  if (headersChanged) {
+    sheet.getRange(1, 1, 1, currentHeaders.length).setValues([currentHeaders]);
+  }
+
+  sheet.setFrozenRows(1);
+}
+
+function getHeaderMap(sheet) {
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const map = {};
+
+  headers.forEach((header, index) => {
+    const key = String(header || '').trim();
+    if (key) {
+      map[key] = index;
+    }
+  });
+
+  return map;
+}
+
+function rowToObject(row, map) {
+  const get = (header) => {
+    const index = map[header];
+    return typeof index === 'number' ? String(row[index] || '').trim() : '';
+  };
+
+  return {
+    editCode: get('Pieteikuma kods'),
+    status: get('Statuss') || STATUSES.ACTIVE,
+    submittedAt: get('Submitted at'),
+    updatedAt: get('Updated at'),
+    participationCity: get('Pilsēta'),
+    distance: normaliseDistance(get('Distance')),
+    teamName: get('Komandas nosaukums'),
+    teamCity: get('Komandas pilsēta / novads'),
+    captainName: get('Kapteinis'),
+    captainEmail: get('Kapteiņa e-pasts'),
+    captainPhone: get('Kapteiņa tālrunis'),
+    participant1: get('Dalībnieks 2'),
+    participant2: get('Dalībnieks 3'),
+    participant3: get('Dalībnieks 4'),
+    participant4: get('Dalībnieks 5'),
+  };
+}
+
+function buildRowFromObject(object, map) {
+  const row = new Array(Object.keys(map).length).fill('');
+
+  Object.keys(object).forEach((header) => {
+    const index = map[header];
+    if (typeof index === 'number') {
+      row[index] = object[header];
+    }
+  });
+
+  return row;
+}
+
+function setRowValues(sheet, rowNumber, valuesByHeader, map) {
+  Object.keys(valuesByHeader).forEach((header) => {
+    const index = map[header];
+    if (typeof index === 'number') {
+      sheet.getRange(rowNumber, index + 1).setValue(valuesByHeader[header]);
+    }
+  });
 }
 
 function normaliseDistance(value) {
@@ -41,16 +159,55 @@ function normaliseDistance(value) {
   return text.endsWith('km') ? text : `${text} km`;
 }
 
-function countParticipants(row) {
-  const captain = row[5];
-  const participant1 = row[8];
-  const participant2 = row[9];
-  const participant3 = row[10];
-  const participant4 = row[11];
+function normaliseCode(value) {
+  return String(value || '').trim();
+}
 
-  return [captain, participant1, participant2, participant3, participant4]
-    .filter((value) => String(value || '').trim().length > 0)
-    .length;
+function createEditCode() {
+  return Utilities.getUuid();
+}
+
+function findRegistrationByCode(sheet, editCode) {
+  const cleanCode = normaliseCode(editCode);
+  const map = getHeaderMap(sheet);
+  const codeIndex = map['Pieteikuma kods'];
+
+  if (typeof codeIndex !== 'number' || !cleanCode) {
+    return null;
+  }
+
+  const values = sheet.getDataRange().getValues();
+
+  for (let rowIndex = 1; rowIndex < values.length; rowIndex += 1) {
+    const row = values[rowIndex];
+
+    if (String(row[codeIndex] || '').trim() === cleanCode) {
+      return {
+        rowNumber: rowIndex + 1,
+        row,
+        map,
+        registration: rowToObject(row, map),
+      };
+    }
+  }
+
+  return null;
+}
+
+function isValidCityAndDistance(city, distance) {
+  const cleanCity = String(city || '').trim();
+  const cleanDistance = normaliseDistance(distance);
+  return Boolean(CITIES[cleanCity] && CITIES[cleanCity].includes(cleanDistance));
+}
+
+function countParticipants(registration) {
+  return [
+    registration.captainName,
+    registration.participant1,
+    registration.participant2,
+    registration.participant3,
+    registration.participant4,
+  ].filter((value) => String(value || '').trim().length > 0).length;
 }
 
 function getEmptyStats() {
@@ -73,24 +230,32 @@ function getEmptyStats() {
 function buildStats() {
   const sheet = getSheet();
   const values = sheet.getDataRange().getValues();
+  const map = getHeaderMap(sheet);
   const rows = getEmptyStats();
 
-  values.forEach((row) => {
-    const city = String(row[1] || '').trim();
-    const distance = normaliseDistance(row[2]);
+  values.forEach((row, index) => {
+    if (index === 0) return;
 
-    if (!CITIES[city] || !CITIES[city].includes(distance)) {
+    const registration = rowToObject(row, map);
+
+    if (registration.status === STATUSES.CANCELLED) {
       return;
     }
 
-    const statsRow = rows.find((item) => item.city === city && item.distance === distance);
+    if (!isValidCityAndDistance(registration.participationCity, registration.distance)) {
+      return;
+    }
+
+    const statsRow = rows.find(
+      (item) => item.city === registration.participationCity && item.distance === registration.distance
+    );
 
     if (!statsRow) {
       return;
     }
 
     statsRow.teams += 1;
-    statsRow.participants += countParticipants(row);
+    statsRow.participants += countParticipants(registration);
   });
 
   const totals = rows.reduce((result, row) => {
@@ -107,28 +272,398 @@ function buildStats() {
   };
 }
 
+function createRegistration(data) {
+  const sheet = getSheet();
+  const map = getHeaderMap(sheet);
+  const now = data.submittedAt || new Date().toISOString();
+  const editCode = createEditCode();
+  const editBaseUrl = String(data.editBaseUrl || '').trim();
+  const editLink = editBaseUrl ? `${editBaseUrl}?code=${encodeURIComponent(editCode)}` : '';
+
+  if (!isValidCityAndDistance(data.participationCity, data.distance)) {
+    return jsonResponse({ ok: false, message: 'Pilsēta vai distance nav derīga.' });
+  }
+
+  const row = buildRowFromObject({
+    'Pieteikuma kods': editCode,
+    'Statuss': STATUSES.ACTIVE,
+    'Submitted at': now,
+    'Updated at': now,
+    'Pilsēta': data.participationCity || '',
+    'Distance': normaliseDistance(data.distance),
+    'Komandas nosaukums': data.teamName || '',
+    'Komandas pilsēta / novads': data.teamCity || '',
+    'Kapteinis': data.captainName || '',
+    'Kapteiņa e-pasts': data.captainEmail || '',
+    'Kapteiņa tālrunis': data.captainPhone || '',
+    'Dalībnieks 2': data.participant1 || '',
+    'Dalībnieks 3': data.participant2 || '',
+    'Dalībnieks 4': data.participant3 || '',
+    'Dalībnieks 5': data.participant4 || '',
+  }, map);
+
+  sheet.appendRow(row);
+
+  const emailSent = sendCreateEmail(data, editCode, editLink);
+
+  return jsonResponse({
+    ok: true,
+    editCode,
+    editLink,
+    emailSent,
+  });
+}
+
+function lookupRegistration(data) {
+  const sheet = getSheet();
+  const found = findRegistrationByCode(sheet, data.editCode);
+
+  if (!found) {
+    return jsonResponse({ ok: false, message: 'Pieteikums ar šādu kodu nav atrasts.' });
+  }
+
+  return jsonResponse({
+    ok: true,
+    registration: found.registration,
+  });
+}
+
+function updateRegistration(data) {
+  const sheet = getSheet();
+  const found = findRegistrationByCode(sheet, data.editCode);
+
+  if (!found) {
+    return jsonResponse({ ok: false, message: 'Pieteikums ar šādu kodu nav atrasts.' });
+  }
+
+  if (found.registration.status === STATUSES.CANCELLED) {
+    return jsonResponse({ ok: false, message: 'Atsauktu pieteikumu vairs nevar labot.' });
+  }
+
+  if (!isValidCityAndDistance(data.participationCity, data.distance)) {
+    return jsonResponse({ ok: false, message: 'Pilsēta vai distance nav derīga.' });
+  }
+
+  const now = data.updatedAt || new Date().toISOString();
+
+  setRowValues(sheet, found.rowNumber, {
+    'Updated at': now,
+    'Pilsēta': data.participationCity || '',
+    'Distance': normaliseDistance(data.distance),
+    'Komandas nosaukums': data.teamName || '',
+    'Komandas pilsēta / novads': data.teamCity || '',
+    'Kapteinis': data.captainName || '',
+    'Kapteiņa e-pasts': data.captainEmail || '',
+    'Kapteiņa tālrunis': data.captainPhone || '',
+    'Dalībnieks 2': data.participant1 || '',
+    'Dalībnieks 3': data.participant2 || '',
+    'Dalībnieks 4': data.participant3 || '',
+    'Dalībnieks 5': data.participant4 || '',
+  }, found.map);
+
+  const updated = findRegistrationByCode(sheet, data.editCode);
+
+  if (updated) {
+    sendUpdateEmail(updated.registration, data.editBaseUrl || '');
+  }
+
+  return jsonResponse({
+    ok: true,
+    message: 'Izmaiņas saglabātas.',
+    registration: updated ? updated.registration : null,
+  });
+}
+
+function cancelRegistration(data) {
+  const sheet = getSheet();
+  const found = findRegistrationByCode(sheet, data.editCode);
+
+  if (!found) {
+    return jsonResponse({ ok: false, message: 'Pieteikums ar šādu kodu nav atrasts.' });
+  }
+
+  if (found.registration.status === STATUSES.CANCELLED) {
+    return jsonResponse({
+      ok: true,
+      message: 'Pieteikums jau ir atsaukts.',
+      registration: found.registration,
+    });
+  }
+
+  const now = data.updatedAt || new Date().toISOString();
+
+  setRowValues(sheet, found.rowNumber, {
+    'Statuss': STATUSES.CANCELLED,
+    'Updated at': now,
+  }, found.map);
+
+  const updated = findRegistrationByCode(sheet, data.editCode);
+
+  if (updated) {
+    sendCancelEmail(updated.registration, data.editBaseUrl || '');
+  }
+
+  return jsonResponse({
+    ok: true,
+    message: 'Pieteikums ir atsaukts.',
+    registration: updated ? updated.registration : null,
+  });
+}
+
+function getCityLocative(city) {
+  const locatives = {
+    'Liepāja': 'Liepājā',
+    'Smiltene': 'Smiltenē',
+    'Ilūkste': 'Ilūkstē',
+  };
+
+  return locatives[String(city || '').trim()] || String(city || '').trim();
+}
+
+function getSiteBaseUrl(editBaseUrl) {
+  const cleanUrl = String(editBaseUrl || '').trim();
+  if (!cleanUrl) return '';
+  return cleanUrl.replace(/\/labot\/?$/, '');
+}
+
+function getLogoFooterHtml(editBaseUrl) {
+  const siteBaseUrl = getSiteBaseUrl(editBaseUrl);
+  const beactiveLogo = siteBaseUrl ? `${siteBaseUrl}/beactive-logo.png` : '';
+  const lsfpLogo = siteBaseUrl ? `${siteBaseUrl}/lsfp-logo.png` : '';
+
+  return `
+    <div style="margin-top: 26px; padding-top: 18px; border-top: 1px solid #dddddd;">
+      <p style="margin: 0 0 12px; font-size: 14px; line-height: 1.5;">Pārējos Eiropas Sporta nedēļas pasākumus meklē mājaslapā – <a href="${BEACTIVE_WEBSITE_URL}">beactive.lv</a></p>
+      ${siteBaseUrl ? `
+        <table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse: collapse; margin-top: 12px;">
+          <tr>
+            <td style="padding: 0 18px 0 0; vertical-align: middle;">
+              <img src="${beactiveLogo}" alt="#BeActive Eiropas Sporta nedēļa" width="150" style="display: block; width: 150px; max-width: 150px; height: auto; border: 0;">
+            </td>
+            <td style="padding: 0; vertical-align: middle;">
+              <img src="${lsfpLogo}" alt="Latvijas Sporta federāciju padome" width="150" style="display: block; width: 150px; max-width: 150px; height: auto; border: 0;">
+            </td>
+          </tr>
+        </table>
+      ` : ''}
+    </div>
+  `;
+}
+
+function getClosingPlain(city) {
+  return [
+    '',
+    `Tiekamies ${getCityLocative(city)} 27. septembrī!`,
+    '',
+    'Tavs sportisko pasākumu draugs – Latvijas Sporta federāciju padome!',
+    '',
+    'Pārējos Eiropas Sporta nedēļas pasākumus meklē mājaslapā – beactive.lv',
+  ].join('\n');
+}
+
+function getClosingHtml(city, editBaseUrl) {
+  return `
+    <p style="margin-top: 22px;"><strong>Tiekamies ${escapeHtml(getCityLocative(city))} 27. septembrī!</strong></p>
+    <p>Tavs sportisko pasākumu draugs – Latvijas Sporta federāciju padome!</p>
+    ${getLogoFooterHtml(editBaseUrl)}
+  `;
+}
+
+function sendEmailMessage(options) {
+  const emailOptions = {
+    htmlBody: options.htmlBody,
+    name: SENDER_NAME,
+    replyTo: SENDER_EMAIL,
+  };
+
+  try {
+    const aliases = GmailApp.getAliases ? GmailApp.getAliases() : [];
+    if (aliases.includes(SENDER_EMAIL)) {
+      GmailApp.sendEmail(options.to, options.subject, options.body, {
+        ...emailOptions,
+        from: SENDER_EMAIL,
+      });
+      return true;
+    }
+  } catch (error) {
+    console.error(error);
+  }
+
+  MailApp.sendEmail({
+    to: options.to,
+    subject: options.subject,
+    body: options.body,
+    htmlBody: options.htmlBody,
+    name: SENDER_NAME,
+    replyTo: SENDER_EMAIL,
+  });
+
+  return true;
+}
+
+function sendCreateEmail(data, editCode, editLink) {
+  try {
+    const email = String(data.captainEmail || '').trim();
+
+    if (!email) {
+      return false;
+    }
+
+    const subject = 'Pieteikums pārgājienam ir saņemts';
+    const plainBody = [
+      'Paldies! Pieteikums pārgājienam ir saņemts.',
+      '',
+      `Komanda: ${data.teamName || ''}`,
+      `Pilsēta: ${data.participationCity || ''}`,
+      `Distance: ${normaliseDistance(data.distance)}`,
+      '',
+      'Komandu kapteiņi pirms došanās distancē saņems gan distances karti drukātā formātā, gan GPX formātā. GPX fails tiks nosūtīts uz e-pastu pārgājiena nedēļas piektdienā.',
+      '',
+      `Pieteikuma labošanas kods: ${editCode}`,
+      editLink ? `Labot vai atsaukt pieteikumu: ${editLink}` : '',
+      getClosingPlain(data.participationCity),
+    ].filter(Boolean).join('\n');
+
+    const htmlBody = `
+      <p>Paldies! Pieteikums pārgājienam ir saņemts.</p>
+      <p><strong>Komanda:</strong> ${escapeHtml(data.teamName || '')}<br>
+      <strong>Pilsēta:</strong> ${escapeHtml(data.participationCity || '')}<br>
+      <strong>Distance:</strong> ${escapeHtml(normaliseDistance(data.distance))}</p>
+      <p>Komandu kapteiņi pirms došanās distancē saņems gan distances karti drukātā formātā, gan GPX formātā. GPX fails tiks nosūtīts uz e-pastu pārgājiena nedēļas piektdienā.</p>
+      <p><strong>Pieteikuma labošanas kods:</strong> ${escapeHtml(editCode)}</p>
+      ${editLink ? `<p><a href="${escapeHtml(editLink)}">Labot vai atsaukt pieteikumu</a></p><p style="word-break: break-all;">${escapeHtml(editLink)}</p>` : '<p>Atveriet mājaslapas sadaļu /labot un ievadiet pieteikuma labošanas kodu.</p>'}
+      ${getClosingHtml(data.participationCity, data.editBaseUrl || '')}
+    `;
+
+    return sendEmailMessage({
+      to: email,
+      subject,
+      body: plainBody,
+      htmlBody,
+    });
+  } catch (error) {
+    console.error(error);
+    return false;
+  }
+}
+
+function sendUpdateEmail(registration, editBaseUrl) {
+  try {
+    const email = String(registration.captainEmail || '').trim();
+    if (!email) return false;
+
+    const subject = 'Pārgājiena pieteikums ir atjaunināts';
+    const plainBody = [
+      'Jūsu pārgājiena pieteikuma izmaiņas ir saglabātas.',
+      '',
+      `Komanda: ${registration.teamName}`,
+      `Pilsēta: ${registration.participationCity}`,
+      `Distance: ${registration.distance}`,
+      getClosingPlain(registration.participationCity),
+    ].join('\n');
+
+    const htmlBody = `
+      <p>Jūsu pārgājiena pieteikuma izmaiņas ir saglabātas.</p>
+      <p><strong>Komanda:</strong> ${escapeHtml(registration.teamName)}<br>
+      <strong>Pilsēta:</strong> ${escapeHtml(registration.participationCity)}<br>
+      <strong>Distance:</strong> ${escapeHtml(registration.distance)}</p>
+      ${getClosingHtml(registration.participationCity, editBaseUrl)}
+    `;
+
+    return sendEmailMessage({
+      to: email,
+      subject,
+      body: plainBody,
+      htmlBody,
+    });
+  } catch (error) {
+    console.error(error);
+    return false;
+  }
+}
+
+function sendCancelEmail(registration, editBaseUrl) {
+  try {
+    const email = String(registration.captainEmail || '').trim();
+    if (!email) return false;
+
+    const subject = 'Pārgājiena pieteikums ir atsaukts';
+    const plainBody = [
+      'Jūsu pārgājiena pieteikums ir atsaukts.',
+      '',
+      `Komanda: ${registration.teamName}`,
+      `Pilsēta: ${registration.participationCity}`,
+      `Distance: ${registration.distance}`,
+      '',
+      'Pārējos Eiropas Sporta nedēļas pasākumus meklē mājaslapā – beactive.lv',
+    ].join('\n');
+
+    const htmlBody = `
+      <p>Jūsu pārgājiena pieteikums ir atsaukts.</p>
+      <p><strong>Komanda:</strong> ${escapeHtml(registration.teamName)}<br>
+      <strong>Pilsēta:</strong> ${escapeHtml(registration.participationCity)}<br>
+      <strong>Distance:</strong> ${escapeHtml(registration.distance)}</p>
+      ${getLogoFooterHtml(editBaseUrl)}
+    `;
+
+    return sendEmailMessage({
+      to: email,
+      subject,
+      body: plainBody,
+      htmlBody,
+    });
+  } catch (error) {
+    console.error(error);
+    return false;
+  }
+}
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 function doGet() {
   return jsonResponse(buildStats());
 }
 
 function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents || '{}');
+    const action = String(data.action || 'create').trim();
+
+    if (action === 'lookup') {
+      return lookupRegistration(data);
+    }
+
+    if (action === 'update') {
+      return updateRegistration(data);
+    }
+
+    if (action === 'cancel') {
+      return cancelRegistration(data);
+    }
+
+    return createRegistration(data);
+  } catch (error) {
+    return jsonResponse({
+      ok: false,
+      message: String(error),
+    });
+  }
+}
+
+function setupSheet() {
   const sheet = getSheet();
-  const data = JSON.parse(e.postData.contents);
+  ensureHeaders(sheet);
+}
 
-  sheet.appendRow([
-    data.submittedAt || new Date().toISOString(),
-    data.participationCity || '',
-    data.distance || '',
-    data.teamName || '',
-    data.teamCity || '',
-    data.captainName || '',
-    data.captainEmail || '',
-    data.captainPhone || '',
-    data.participant1 || '',
-    data.participant2 || '',
-    data.participant3 || '',
-    data.participant4 || '',
-  ]);
-
-  return jsonResponse({ ok: true });
+function authorizeScript() {
+  getSheet();
+  MailApp.getRemainingDailyQuota();
+  GmailApp.getAliases();
 }
