@@ -145,6 +145,14 @@ export default function ManageRegistrationPage() {
     setRegistration({ ...registration, participants: [...registration.participants, ''] });
   }
 
+  function removeParticipant(index: number) {
+    if (!registration) return;
+    setRegistration({
+      ...registration,
+      participants: registration.participants.filter((_, currentIndex) => currentIndex !== index),
+    });
+  }
+
   async function handleSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -320,15 +328,27 @@ export default function ManageRegistrationPage() {
               </label>
 
               {registration.participants.map((participant, index) => (
-                <label key={`participant-${index}`}>
-                  Dalībnieks {index + 2}
-                  <input
-                    value={participant}
-                    onChange={(event) => updateParticipant(index, event.target.value)}
-                    type="text"
-                    disabled={isCancelled}
-                  />
-                </label>
+                <div className="participant-field" key={`participant-${index}`}>
+                  <label>
+                    Dalībnieks {index + 2}
+                    <input
+                      value={participant}
+                      onChange={(event) => updateParticipant(index, event.target.value)}
+                      type="text"
+                      disabled={isCancelled}
+                    />
+                  </label>
+                  {!isCancelled && (
+                    <button
+                      type="button"
+                      className="remove-participant-button"
+                      onClick={() => removeParticipant(index)}
+                      aria-label={`Noņemt dalībnieku ${index + 2}`}
+                    >
+                      Noņemt
+                    </button>
+                  )}
+                </div>
               ))}
 
               {!isCancelled && (

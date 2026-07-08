@@ -149,6 +149,10 @@ export default function Home() {
     setAdditionalParticipants((current) => [...current, '']);
   }
 
+  function removeAdditionalParticipant(index: number) {
+    setAdditionalParticipants((current) => current.filter((_, currentIndex) => currentIndex !== index));
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSubmitting(true);
@@ -286,14 +290,24 @@ export default function Home() {
             </label>
 
             {additionalParticipants.map((participant, index) => (
-              <label key={`participant-${index}`}>
-                Dalībnieks {index + 2}
-                <input
-                  value={participant}
-                  onChange={(event) => updateAdditionalParticipant(index, event.target.value)}
-                  type="text"
-                />
-              </label>
+              <div className="participant-field" key={`participant-${index}`}>
+                <label>
+                  Dalībnieks {index + 2}
+                  <input
+                    value={participant}
+                    onChange={(event) => updateAdditionalParticipant(index, event.target.value)}
+                    type="text"
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="remove-participant-button"
+                  onClick={() => removeAdditionalParticipant(index)}
+                  aria-label={`Noņemt dalībnieku ${index + 2}`}
+                >
+                  Noņemt
+                </button>
+              </div>
             ))}
 
             <div className="add-participant-block">
