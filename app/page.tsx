@@ -29,12 +29,13 @@ type StatsResponse = {
   updatedAt?: string;
 };
 
-const memberFields = [
-  { name: 'participant1', label: 'Dalībnieks 2' },
-  { name: 'participant2', label: 'Dalībnieks 3' },
-  { name: 'participant3', label: 'Dalībnieks 4' },
-  { name: 'participant4', label: 'Dalībnieks 5' },
-];
+const managePageUrl = 'https://pargajiensregistracija-khaki.vercel.app/labot';
+
+const cityCrests: Record<ParticipationCity, string> = {
+  Liepāja: '/crest-liepaja.png',
+  Smiltene: '/crest-smiltene.png',
+  Ilūkste: '/crest-ilukste.png',
+};
 
 function RegistrationStats({ refreshKey }: { refreshKey: number }) {
   const [stats, setStats] = useState<StatsResponse | null>(null);
@@ -98,16 +99,19 @@ function RegistrationStats({ refreshKey }: { refreshKey: number }) {
         <div className="stats-grid">
           {participationCities.map((city) => (
             <div className="city-stats" key={city}>
-              <h3>{city}</h3>
+              <div className="city-stats-title">
+                <img src={cityCrests[city]} alt={`${city} ģerbonis`} />
+                <h3>{city}</h3>
+              </div>
               <div className="distance-list">
                 {cityDistances[city].map((distance) => {
                   const row = rows.find((item) => item.city === city && item.distance === distance);
 
                   return (
                     <div className="distance-row" key={`${city}-${distance}`}>
-                      <strong>{distance}</strong>
-                      <span>{row?.teams || 0} kom.</span>
-                      <span>{row?.participants || 0} dal.</span>
+                      <strong className="distance-badge">{distance}</strong>
+                      <span><b>{row?.teams || 0}</b> komandas</span>
+                      <span><b>{row?.participants || 0}</b> dalībnieki</span>
                     </div>
                   );
                 })}
@@ -120,13 +124,30 @@ function RegistrationStats({ refreshKey }: { refreshKey: number }) {
   );
 }
 
+function normaliseParticipants(values: string[]) {
+  return values.map((value) => value.trim()).filter(Boolean);
+}
+
 export default function Home() {
   const [message, setMessage] = useState<MessageState>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedCity, setSelectedCity] = useState<ParticipationCity | ''>('');
+  const [additionalParticipants, setAdditionalParticipants] = useState<string[]>([]);
   const [statsRefreshKey, setStatsRefreshKey] = useState(0);
 
   const availableDistances = selectedCity ? cityDistances[selectedCity] : [];
+
+  function updateAdditionalParticipant(index: number, value: string) {
+    setAdditionalParticipants((current) => {
+      const next = [...current];
+      next[index] = value;
+      return next;
+    });
+  }
+
+  function addAdditionalParticipant() {
+    setAdditionalParticipants((current) => [...current, '']);
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -135,6 +156,7 @@ export default function Home() {
 
     const form = event.currentTarget;
     const formData = new FormData(form);
+    const participants = normaliseParticipants(additionalParticipants);
 
     const payload = {
       participationCity: formData.get('participationCity'),
@@ -144,10 +166,7 @@ export default function Home() {
       captainName: formData.get('captainName'),
       captainEmail: formData.get('captainEmail'),
       captainPhone: formData.get('captainPhone'),
-      participant1: formData.get('participant1'),
-      participant2: formData.get('participant2'),
-      participant3: formData.get('participant3'),
-      participant4: formData.get('participant4'),
+      participants,
       dataConsent: formData.get('dataConsent') === 'on',
     };
 
@@ -167,8 +186,10 @@ export default function Home() {
 
       setMessage({
         type: result.demoMode ? 'info' : 'success',
-        text: result.message || 'Paldies! Pieteikums ir saņemts. Komandu kapteiņi pirms došanās distancē saņems gan distances karti drukātā formātā, gan GPX formātā. GPX fails tiks nosūtīts uz e-pastu pārgājiena nedēļas piektdienā.',
-        editLink: result.editLink || '/labot',
+        text:
+          result.message ||
+          'Paldies! Pieteikums ir saņemts.\nApstiprinājums un saite, kā arī unikālais kods, pieteikuma labošanai vai atsaukšanai nosūtīta uz kapteiņa e-pastu.',
+        editLink: result.editLink || managePageUrl,
         editCode: result.editCode,
       });
 
@@ -177,6 +198,7 @@ export default function Home() {
       if (!result.demoMode) {
         form.reset();
         setSelectedCity('');
+        setAdditionalParticipants([]);
       }
     } catch {
       setMessage({ type: 'error', text: 'Pieteikumu neizdevās nosūtīt. Lūdzu, mēģiniet vēlreiz.' });
@@ -198,9 +220,13 @@ export default function Home() {
             <div className={`form-message ${message.type}`}>
               <p>{message.text}</p>
               {message.type === 'success' && (
-                <div className="message-actions">
-                  <a className="message-link" href={message.editLink || '/labot'}>Labot vai atsaukt pieteikumu</a>
-                  {message.editCode && <span className="message-code">Kods: {message.editCode}</span>}
+                <div className="message-actions message-actions-vertical">
+                  <div className="message-link-block">
+                    <span>Papildus saitē:</span>
+                    <a className="message-url" href={managePageUrl}>
+                      {managePageUrl}
+                    </a>
+                  </div>
                 </div>
               )}
             </div>
@@ -259,12 +285,23 @@ export default function Home() {
               <input name="captainPhone" type="tel" required />
             </label>
 
-            {memberFields.map((field) => (
-              <label key={field.name}>
-                {field.label}
-                <input name={field.name} type="text" />
+            {additionalParticipants.map((participant, index) => (
+              <label key={`participant-${index}`}>
+                Dalībnieks {index + 2}
+                <input
+                  value={participant}
+                  onChange={(event) => updateAdditionalParticipant(index, event.target.value)}
+                  type="text"
+                />
               </label>
             ))}
+
+            <div className="add-participant-block">
+              <span>Vai vēlaties pievienot vēl personas?</span>
+              <button type="button" className="small-action-button" onClick={addAdditionalParticipant}>
+                Jā
+              </button>
+            </div>
           </div>
 
           <label className="checkbox-label">

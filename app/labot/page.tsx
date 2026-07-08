@@ -11,41 +11,44 @@ type MessageState = {
 type RegistrationData = {
   editCode: string;
   status: string;
-  participationCity: ParticipationCity;
+  participationCity: ParticipationCity | '';
   distance: string;
   teamName: string;
   teamCity: string;
   captainName: string;
   captainEmail: string;
   captainPhone: string;
-  participant1: string;
-  participant2: string;
-  participant3: string;
-  participant4: string;
+  participants: string[];
+  participant1?: string;
+  participant2?: string;
+  participant3?: string;
+  participant4?: string;
 };
 
-const memberFields = [
-  { name: 'participant1', label: 'Dalībnieks 2' },
-  { name: 'participant2', label: 'Dalībnieks 3' },
-  { name: 'participant3', label: 'Dalībnieks 4' },
-  { name: 'participant4', label: 'Dalībnieks 5' },
-] as const;
+function getParticipantsFromRegistration(registration: Partial<RegistrationData> | undefined) {
+  if (!registration) return [];
+
+  if (Array.isArray(registration.participants)) {
+    return registration.participants.map((value) => String(value || '')).filter(Boolean);
+  }
+
+  return [registration.participant1, registration.participant2, registration.participant3, registration.participant4]
+    .map((value) => String(value || ''))
+    .filter(Boolean);
+}
 
 function emptyRegistration(editCode = ''): RegistrationData {
   return {
     editCode,
     status: 'Aktīvs',
-    participationCity: '' as ParticipationCity,
+    participationCity: '',
     distance: '',
     teamName: '',
     teamCity: '',
     captainName: '',
     captainEmail: '',
     captainPhone: '',
-    participant1: '',
-    participant2: '',
-    participant3: '',
-    participant4: '',
+    participants: [],
   };
 }
 
@@ -83,10 +86,15 @@ export default function ManageRegistrationPage() {
         return;
       }
 
-      setRegistration(result.registration || emptyRegistration(cleanCode));
+      const loadedRegistration = result.registration || emptyRegistration(cleanCode);
+      setRegistration({
+        ...emptyRegistration(cleanCode),
+        ...loadedRegistration,
+        participants: getParticipantsFromRegistration(loadedRegistration),
+      });
       setEditCode(cleanCode);
 
-      if (result.registration?.status === 'Atsaukts') {
+      if (loadedRegistration?.status === 'Atsaukts') {
         setMessage({ type: 'info', text: 'Šis pieteikums ir atsaukts.' });
       } else {
         setMessage({ type: 'success', text: 'Pieteikums atrasts. Varat veikt izmaiņas.' });
@@ -124,6 +132,19 @@ export default function ManageRegistrationPage() {
     });
   }
 
+  function updateParticipant(index: number, value: string) {
+    if (!registration) return;
+
+    const participants = [...registration.participants];
+    participants[index] = value;
+    setRegistration({ ...registration, participants });
+  }
+
+  function addParticipant() {
+    if (!registration) return;
+    setRegistration({ ...registration, participants: [...registration.participants, ''] });
+  }
+
   async function handleSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -136,7 +157,11 @@ export default function ManageRegistrationPage() {
       const response = await fetch('/api/manage', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...registration, action: 'update' }),
+        body: JSON.stringify({
+          ...registration,
+          participants: registration.participants.map((value) => value.trim()).filter(Boolean),
+          action: 'update',
+        }),
       });
 
       const result = await response.json();
@@ -146,7 +171,12 @@ export default function ManageRegistrationPage() {
         return;
       }
 
-      setRegistration(result.registration || registration);
+      const updatedRegistration = result.registration || registration;
+      setRegistration({
+        ...registration,
+        ...updatedRegistration,
+        participants: getParticipantsFromRegistration(updatedRegistration),
+      });
       setMessage({ type: 'success', text: result.message || 'Izmaiņas saglabātas.' });
     } catch {
       setMessage({ type: 'error', text: 'Izmaiņas neizdevās saglabāt. Lūdzu, mēģiniet vēlreiz.' });
@@ -178,7 +208,11 @@ export default function ManageRegistrationPage() {
         return;
       }
 
-      setRegistration(result.registration || { ...registration, status: 'Atsaukts' });
+      setRegistration(result.registration ? {
+        ...registration,
+        ...result.registration,
+        participants: getParticipantsFromRegistration(result.registration),
+      } : { ...registration, status: 'Atsaukts' });
       setMessage({ type: 'success', text: result.message || 'Pieteikums ir atsaukts.' });
     } catch {
       setMessage({ type: 'error', text: 'Pieteikumu neizdevās atsaukt. Lūdzu, mēģiniet vēlreiz.' });
@@ -204,11 +238,13 @@ export default function ManageRegistrationPage() {
 
           <label className="full-row">
             Pieteikuma labošanas kods *
+            <span className="field-help">Pieteikuma labošanas kods ir pieejams norādītā kapteiņa e-pastā.</span>
             <input
               value={editCode}
               onChange={(event) => setEditCode(event.target.value)}
               type="text"
               required
+              placeholder="Ievadiet kodu"
             />
           </label>
 
@@ -283,17 +319,26 @@ export default function ManageRegistrationPage() {
                 <input value={registration.captainPhone} onChange={(event) => updateField('captainPhone', event.target.value)} type="tel" required disabled={isCancelled} />
               </label>
 
-              {memberFields.map((field) => (
-                <label key={field.name}>
-                  {field.label}
+              {registration.participants.map((participant, index) => (
+                <label key={`participant-${index}`}>
+                  Dalībnieks {index + 2}
                   <input
-                    value={registration[field.name]}
-                    onChange={(event) => updateField(field.name, event.target.value)}
+                    value={participant}
+                    onChange={(event) => updateParticipant(index, event.target.value)}
                     type="text"
                     disabled={isCancelled}
                   />
                 </label>
               ))}
+
+              {!isCancelled && (
+                <div className="add-participant-block">
+                  <span>Vai vēlaties pievienot vēl personas?</span>
+                  <button type="button" className="small-action-button" onClick={addParticipant}>
+                    Jā
+                  </button>
+                </div>
+              )}
             </div>
 
             {!isCancelled && (

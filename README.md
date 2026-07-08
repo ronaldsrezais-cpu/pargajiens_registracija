@@ -5,12 +5,13 @@ Vienkārša Next.js mājaslapa pārgājiena komandu reģistrācijai ar Google Sh
 ## Kas ir iekļauts
 
 - Pieteikšanās forma latviešu valodā.
+- Iespēja pievienot neierobežotu papildu dalībnieku skaitu.
 - Pilsētas un distances:
   - Liepāja: 5 km, 14 km, 22 km
   - Smiltene: 7 km, 13 km, 21 km
   - Ilūkste: 5 km, 12 km, 19 km
 - Google Sheets datu saglabāšana.
-- Skaitītājs pa pilsētām un distancēm.
+- Skaitītājs pa pilsētām un distancēm ar pilsētu ģerboņiem.
 - Unikāls pieteikuma labošanas kods katrai komandai.
 - Automātisks e-pasts kapteinim ar saiti “Labot vai atsaukt pieteikumu”.
 - Atsevišķa labošanas lapa: `/labot`.
@@ -49,7 +50,7 @@ const SHEET_ID = 'https://docs.google.com/spreadsheets/d/13ZoUwhTLpMeXWqpBXxmsdy
 
 5. Nospiediet `Save`.
 6. Funkciju sarakstā izvēlieties `authorizeScript`.
-7. Nospiediet `Run` un apstipriniet piekļuves tiesības. Tas vajadzīgs, jo jaunā versija sūta e-pastus ar `MailApp`.
+7. Nospiediet `Run` un apstipriniet piekļuves tiesības. Tas vajadzīgs, jo jaunā versija sūta e-pastus un pārbauda Gmail alias.
 8. Ejiet uz `Deploy → Manage deployments`.
 9. Spiediet zīmulīti/edit pie esošā Web app deployment.
 10. Pie `Version` izvēlieties `New version`.
@@ -100,8 +101,12 @@ npm run build
 
 ## E-pasta sūtītājs
 
-Apps Script mēģina sūtīt e-pastus ar adresi `latvijassportafederacijupadome@gmail.com`. Lai šī adrese parādītos kā īstais sūtītājs laukā “From”, tai jābūt pievienotai kā Gmail/Google Workspace send-as alias kontam, ar kuru tiek izpildīts Apps Script. Ja alias nav pievienots, Google nosūtīs e-pastu no skripta konta, bet `latvijassportafederacijupadome@gmail.com` būs norādīts kā Reply-To.
+Apps Script sūta e-pastus ar adresi `latvijassportafederacijupadome@gmail.com`. Lai šī adrese parādītos kā īstais sūtītājs laukā “From”, tai jābūt pievienotai kā Gmail/Google Workspace send-as alias kontam, ar kuru tiek izpildīts Apps Script. Ja alias nav pieejams, pieteikums tiks saglabāts, bet apstiprinājuma e-pasts netiks nosūtīts, lai nejauši netiktu parādīts privātais e-pasts.
 
-## LSFP logo
+## Logo un ģerboņi
 
-Failā `public/lsfp-logo.png` ir ievietots vienkāršs LSFP logotipa vietturis. Ja ir pieejams oficiālais LSFP logo, aizvietojiet šo failu ar oficiālo logo, saglabājot tādu pašu faila nosaukumu.
+Failā `public/lsfp-logo.png` ir ievietots atjaunotais LSFP logo. Skaitītāja sadaļai pievienoti pilsētu ģerboņi: `crest-liepaja.png`, `crest-smiltene.png`, `crest-ilukste.png`.
+
+## Latest change
+
+Apvienotas jaunākās izmaiņas: īsāks pieteikuma apstiprinājuma teksts, paskaidrojums labošanas kodam, neierobežots papildu dalībnieku skaits, pilsētu ģerboņi skaitītājā, pilni vārdi “komandas” un “dalībnieki”, kā arī atjaunots LSFP logo e-pastā. Google Apps Script kods jāatjaunina no `apps-script/Code.gs`.

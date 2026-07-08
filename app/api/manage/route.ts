@@ -14,6 +14,7 @@ type ManagePayload = {
   captainName?: string;
   captainEmail?: string;
   captainPhone?: string;
+  participants?: string[];
   participant1?: string;
   participant2?: string;
   participant3?: string;

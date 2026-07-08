@@ -2,6 +2,7 @@
 //
 // What it does:
 // - saves new registrations to Google Sheets;
+// - supports unlimited additional participants;
 // - creates a unique edit code for every registration;
 // - emails the captain a link to edit or cancel the registration;
 // - allows the website to update or cancel an existing registration;
@@ -31,7 +32,7 @@ const CITIES = {
   'Ilūkste': ['5 km', '12 km', '19 km'],
 };
 
-const HEADERS = [
+const BASE_HEADERS = [
   'Pieteikuma kods',
   'Statuss',
   'Submitted at',
@@ -43,11 +44,16 @@ const HEADERS = [
   'Kapteinis',
   'Kapteiņa e-pasts',
   'Kapteiņa tālrunis',
+];
+
+const INITIAL_PARTICIPANT_HEADERS = [
   'Dalībnieks 2',
   'Dalībnieks 3',
   'Dalībnieks 4',
   'Dalībnieks 5',
 ];
+
+const HEADERS = BASE_HEADERS.concat(INITIAL_PARTICIPANT_HEADERS);
 
 function jsonResponse(data) {
   return ContentService
@@ -92,6 +98,25 @@ function ensureHeaders(sheet) {
   sheet.setFrozenRows(1);
 }
 
+function ensureParticipantHeaders(sheet, participantCount) {
+  const requiredAdditionalCount = Math.max(Number(participantCount || 0), INITIAL_PARTICIPANT_HEADERS.length);
+  const lastColumn = Math.max(sheet.getLastColumn(), 1);
+  const currentHeaders = sheet.getRange(1, 1, 1, lastColumn).getValues()[0].map(String);
+  let headersChanged = false;
+
+  for (let index = 0; index < requiredAdditionalCount; index += 1) {
+    const header = `Dalībnieks ${index + 2}`;
+    if (!currentHeaders.includes(header)) {
+      currentHeaders.push(header);
+      headersChanged = true;
+    }
+  }
+
+  if (headersChanged) {
+    sheet.getRange(1, 1, 1, currentHeaders.length).setValues([currentHeaders]);
+  }
+}
+
 function getHeaderMap(sheet) {
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
   const map = {};
@@ -106,13 +131,24 @@ function getHeaderMap(sheet) {
   return map;
 }
 
+function getParticipantHeaders(map) {
+  return Object.keys(map)
+    .filter((header) => /^Dalībnieks \d+$/.test(header))
+    .sort((a, b) => Number(a.replace('Dalībnieks ', '')) - Number(b.replace('Dalībnieks ', '')));
+}
+
 function rowToObject(row, map) {
   const get = (header) => {
     const index = map[header];
     return typeof index === 'number' ? String(row[index] || '').trim() : '';
   };
 
-  return {
+  const participantHeaders = getParticipantHeaders(map);
+  const participants = participantHeaders
+    .map((header) => get(header))
+    .filter((value) => value.length > 0);
+
+  const object = {
     editCode: get('Pieteikuma kods'),
     status: get('Statuss') || STATUSES.ACTIVE,
     submittedAt: get('Submitted at'),
@@ -124,11 +160,15 @@ function rowToObject(row, map) {
     captainName: get('Kapteinis'),
     captainEmail: get('Kapteiņa e-pasts'),
     captainPhone: get('Kapteiņa tālrunis'),
-    participant1: get('Dalībnieks 2'),
-    participant2: get('Dalībnieks 3'),
-    participant3: get('Dalībnieks 4'),
-    participant4: get('Dalībnieks 5'),
+    participants,
   };
+
+  // Backwards-compatible fields for older website builds.
+  participants.forEach((participant, index) => {
+    object[`participant${index + 1}`] = participant;
+  });
+
+  return object;
 }
 
 function buildRowFromObject(object, map) {
@@ -151,6 +191,31 @@ function setRowValues(sheet, rowNumber, valuesByHeader, map) {
       sheet.getRange(rowNumber, index + 1).setValue(valuesByHeader[header]);
     }
   });
+}
+
+function getParticipantsFromData(data) {
+  if (Array.isArray(data.participants)) {
+    return data.participants.map((value) => String(value || '').trim()).filter(Boolean);
+  }
+
+  return [data.participant1, data.participant2, data.participant3, data.participant4]
+    .map((value) => String(value || '').trim())
+    .filter(Boolean);
+}
+
+function getParticipantValuesByHeader(participants, map) {
+  const values = {};
+  const participantHeaders = getParticipantHeaders(map);
+
+  participantHeaders.forEach((header) => {
+    values[header] = '';
+  });
+
+  participants.forEach((participant, index) => {
+    values[`Dalībnieks ${index + 2}`] = participant;
+  });
+
+  return values;
 }
 
 function normaliseDistance(value) {
@@ -201,13 +266,11 @@ function isValidCityAndDistance(city, distance) {
 }
 
 function countParticipants(registration) {
-  return [
-    registration.captainName,
-    registration.participant1,
-    registration.participant2,
-    registration.participant3,
-    registration.participant4,
-  ].filter((value) => String(value || '').trim().length > 0).length;
+  const participants = Array.isArray(registration.participants) ? registration.participants : [];
+
+  return [registration.captainName].concat(participants)
+    .filter((value) => String(value || '').trim().length > 0)
+    .length;
 }
 
 function getEmptyStats() {
@@ -274,6 +337,8 @@ function buildStats() {
 
 function createRegistration(data) {
   const sheet = getSheet();
+  const participants = getParticipantsFromData(data);
+  ensureParticipantHeaders(sheet, participants.length);
   const map = getHeaderMap(sheet);
   const now = data.submittedAt || new Date().toISOString();
   const editCode = createEditCode();
@@ -284,7 +349,7 @@ function createRegistration(data) {
     return jsonResponse({ ok: false, message: 'Pilsēta vai distance nav derīga.' });
   }
 
-  const row = buildRowFromObject({
+  const row = buildRowFromObject(Object.assign({
     'Pieteikuma kods': editCode,
     'Statuss': STATUSES.ACTIVE,
     'Submitted at': now,
@@ -296,15 +361,11 @@ function createRegistration(data) {
     'Kapteinis': data.captainName || '',
     'Kapteiņa e-pasts': data.captainEmail || '',
     'Kapteiņa tālrunis': data.captainPhone || '',
-    'Dalībnieks 2': data.participant1 || '',
-    'Dalībnieks 3': data.participant2 || '',
-    'Dalībnieks 4': data.participant3 || '',
-    'Dalībnieks 5': data.participant4 || '',
-  }, map);
+  }, getParticipantValuesByHeader(participants, map)), map);
 
   sheet.appendRow(row);
 
-  const emailSent = sendCreateEmail(data, editCode, editLink);
+  const emailSent = sendCreateEmail(Object.assign({}, data, { participants }), editCode, editLink);
 
   return jsonResponse({
     ok: true,
@@ -344,9 +405,12 @@ function updateRegistration(data) {
     return jsonResponse({ ok: false, message: 'Pilsēta vai distance nav derīga.' });
   }
 
+  const participants = getParticipantsFromData(data);
+  ensureParticipantHeaders(sheet, participants.length);
+  const map = getHeaderMap(sheet);
   const now = data.updatedAt || new Date().toISOString();
 
-  setRowValues(sheet, found.rowNumber, {
+  setRowValues(sheet, found.rowNumber, Object.assign({
     'Updated at': now,
     'Pilsēta': data.participationCity || '',
     'Distance': normaliseDistance(data.distance),
@@ -355,11 +419,7 @@ function updateRegistration(data) {
     'Kapteinis': data.captainName || '',
     'Kapteiņa e-pasts': data.captainEmail || '',
     'Kapteiņa tālrunis': data.captainPhone || '',
-    'Dalībnieks 2': data.participant1 || '',
-    'Dalībnieks 3': data.participant2 || '',
-    'Dalībnieks 4': data.participant3 || '',
-    'Dalībnieks 5': data.participant4 || '',
-  }, found.map);
+  }, getParticipantValuesByHeader(participants, map)), map);
 
   const updated = findRegistrationByCode(sheet, data.editCode);
 
@@ -391,11 +451,12 @@ function cancelRegistration(data) {
   }
 
   const now = data.updatedAt || new Date().toISOString();
+  const map = getHeaderMap(sheet);
 
   setRowValues(sheet, found.rowNumber, {
     'Statuss': STATUSES.CANCELLED,
     'Updated at': now,
-  }, found.map);
+  }, map);
 
   const updated = findRegistrationByCode(sheet, data.editCode);
 
@@ -437,10 +498,10 @@ function getLogoFooterHtml(editBaseUrl) {
       ${siteBaseUrl ? `
         <table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse: collapse; margin-top: 12px;">
           <tr>
-            <td style="padding: 0 18px 0 0; vertical-align: middle;">
+            <td style="padding: 0 18px 0 0; vertical-align: middle; width: 150px;">
               <img src="${beactiveLogo}" alt="#BeActive Eiropas Sporta nedēļa" width="150" style="display: block; width: 150px; max-width: 150px; height: auto; border: 0;">
             </td>
-            <td style="padding: 0; vertical-align: middle;">
+            <td style="padding: 0; vertical-align: middle; width: 150px;">
               <img src="${lsfpLogo}" alt="Latvijas Sporta federāciju padome" width="150" style="display: block; width: 150px; max-width: 150px; height: auto; border: 0;">
             </td>
           </tr>
@@ -479,26 +540,18 @@ function sendEmailMessage(options) {
   try {
     const aliases = GmailApp.getAliases ? GmailApp.getAliases() : [];
     if (aliases.includes(SENDER_EMAIL)) {
-      GmailApp.sendEmail(options.to, options.subject, options.body, {
-        ...emailOptions,
+      GmailApp.sendEmail(options.to, options.subject, options.body, Object.assign({}, emailOptions, {
         from: SENDER_EMAIL,
-      });
+      }));
       return true;
     }
   } catch (error) {
     console.error(error);
   }
 
-  MailApp.sendEmail({
-    to: options.to,
-    subject: options.subject,
-    body: options.body,
-    htmlBody: options.htmlBody,
-    name: SENDER_NAME,
-    replyTo: SENDER_EMAIL,
-  });
-
-  return true;
+  // Avoid sending from a private account if the sender alias is not available.
+  console.error(`Sender alias is not available: ${SENDER_EMAIL}`);
+  return false;
 }
 
 function sendCreateEmail(data, editCode, editLink) {

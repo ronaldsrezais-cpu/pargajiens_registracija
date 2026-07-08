@@ -10,6 +10,7 @@ type RegistrationPayload = {
   captainName?: string;
   captainEmail?: string;
   captainPhone?: string;
+  participants?: string[];
   participant1?: string;
   participant2?: string;
   participant3?: string;
@@ -121,12 +122,12 @@ export async function POST(request: Request) {
     }
 
     const emailNote = result.emailSent === false
-      ? ' Pieteikums ir saglabāts, bet apstiprinājuma e-pastu neizdevās nosūtīt. Ja nepieciešams, sazinieties ar organizatoriem.'
-      : ' Apstiprinājums un saite pieteikuma labošanai vai atsaukšanai nosūtīta uz kapteiņa e-pastu.';
+      ? 'Pieteikums ir saglabāts, bet apstiprinājuma e-pastu neizdevās nosūtīt. Ja nepieciešams, sazinieties ar organizatoriem.'
+      : 'Apstiprinājums un saite, kā arī unikālais kods, pieteikuma labošanai vai atsaukšanai nosūtīta uz kapteiņa e-pastu.';
 
     return NextResponse.json({
       ok: true,
-      message: `Paldies! Pieteikums ir saņemts. Komandu kapteiņi pirms došanās distancē saņems gan distances karti drukātā formātā, gan GPX formātā. GPX fails tiks nosūtīts uz e-pastu pārgājiena nedēļas piektdienā.${emailNote}`,
+      message: `Paldies! Pieteikums ir saņemts.\n${emailNote}`,
       editCode: result.editCode,
       editLink: result.editLink,
     });
