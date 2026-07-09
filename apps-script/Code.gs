@@ -570,9 +570,9 @@ function sendCreateEmail(data, editCode, editLink) {
       return false;
     }
 
-    const subject = 'Pieteikums pārgājienam ir saņemts';
+    const subject = 'Apstiprinājums dalībai BeActive Pārgājienā 2026';
     const plainBody = [
-      'Paldies! Pieteikums pārgājienam ir saņemts.',
+      'Jūsu komanda ir apstiprināta dalībai BeActive Pārgājienā 2026!',
       '',
       `Komanda: ${data.teamName || ''}`,
       `Pilsēta: ${data.participationCity || ''}`,
@@ -588,7 +588,7 @@ function sendCreateEmail(data, editCode, editLink) {
     ].filter(Boolean).join('\n');
 
     const htmlBody = `
-      <p>Paldies! Pieteikums pārgājienam ir saņemts.</p>
+      <p>Jūsu komanda ir apstiprināta dalībai BeActive Pārgājienā 2026!</p>
       <p><strong>Komanda:</strong> ${escapeHtml(data.teamName || '')}<br>
       <strong>Pilsēta:</strong> ${escapeHtml(data.participationCity || '')}<br>
       <strong>Distance:</strong> ${escapeHtml(normaliseDistance(data.distance))}</p>

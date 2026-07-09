@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { cityDistances, participationCities, type ParticipationCity } from '../content';
 
 type MessageState = {
@@ -59,6 +59,15 @@ export default function ManageRegistrationPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+  const messageRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (message) {
+      window.requestAnimationFrame(() => {
+        messageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+  }, [message]);
 
   async function lookupRegistration(code = editCode) {
     const cleanCode = code.trim();
@@ -242,7 +251,11 @@ export default function ManageRegistrationPage() {
         </div>
 
         <form className="registration-form" onSubmit={handleLookup}>
-          {message && <div className={`form-message ${message.type}`}>{message.text}</div>}
+          {message && (
+            <div ref={messageRef} className={`form-message ${message.type}`}>
+              {message.text}
+            </div>
+          )}
 
           <label className="full-row">
             Pieteikuma labošanas kods *

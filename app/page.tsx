@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { cityDistances, participationCities, type ParticipationCity } from './content';
 
 type MessageState = {
@@ -36,6 +36,15 @@ const cityCrests: Record<ParticipationCity, string> = {
   Smiltene: '/crest-smiltene.png',
   Ilūkste: '/crest-ilukste.png',
 };
+
+
+function latvianCountLabel(count: number, singular: string, plural: string) {
+  const absoluteCount = Math.abs(count);
+  const lastTwoDigits = absoluteCount % 100;
+  const lastDigit = absoluteCount % 10;
+
+  return lastDigit === 1 && lastTwoDigits !== 11 ? singular : plural;
+}
 
 function RegistrationStats({ refreshKey }: { refreshKey: number }) {
   const [stats, setStats] = useState<StatsResponse | null>(null);
@@ -80,8 +89,8 @@ function RegistrationStats({ refreshKey }: { refreshKey: number }) {
       <div className="stats-header">
         <h2 id="stats-title">Reģistrējušies</h2>
         <div className="stats-totals" aria-label="Kopējais reģistrāciju skaits">
-          <span>{totals.teams} komandas</span>
-          <span>{totals.participants} dalībnieki</span>
+          <span>{totals.teams} {latvianCountLabel(totals.teams, 'komanda', 'komandas')}</span>
+          <span>{totals.participants} {latvianCountLabel(totals.participants, 'dalībnieks', 'dalībnieki')}</span>
         </div>
       </div>
 
@@ -110,8 +119,8 @@ function RegistrationStats({ refreshKey }: { refreshKey: number }) {
                   return (
                     <div className="distance-row" key={`${city}-${distance}`}>
                       <strong className="distance-badge">{distance}</strong>
-                      <span><b>{row?.teams || 0}</b> komandas</span>
-                      <span><b>{row?.participants || 0}</b> dalībnieki</span>
+                      <span><b>{row?.teams || 0}</b> {latvianCountLabel(row?.teams || 0, 'komanda', 'komandas')}</span>
+                      <span><b>{row?.participants || 0}</b> {latvianCountLabel(row?.participants || 0, 'dalībnieks', 'dalībnieki')}</span>
                     </div>
                   );
                 })}
@@ -134,6 +143,15 @@ export default function Home() {
   const [selectedCity, setSelectedCity] = useState<ParticipationCity | ''>('');
   const [additionalParticipants, setAdditionalParticipants] = useState<string[]>([]);
   const [statsRefreshKey, setStatsRefreshKey] = useState(0);
+  const messageRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (message) {
+      window.requestAnimationFrame(() => {
+        messageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+  }, [message]);
 
   const availableDistances = selectedCity ? cityDistances[selectedCity] : [];
 
@@ -192,7 +210,7 @@ export default function Home() {
         type: result.demoMode ? 'info' : 'success',
         text:
           result.message ||
-          'Paldies! Pieteikums ir saņemts.\nDalības apstiprinājums, kā arī unikālais kods pieteikuma labošanai vai atsaukšanai ir nosūtīti uz kapteiņa e-pastu.\n\nPieteikšanās tiešsaistē un izmaiņu veikšana ir iespējama līdz 24. septembra plkst. 12.00. Ja izmaiņas rodas pēc šī termiņa — nebēdājiet, ikviens joprojām var droši pievienoties pārgājienam un reģistrēties uz vietas pasākuma dienā reģistrācijas punktā.',
+          'Paldies! Dalība apstiprināta!\nKapteiņa norādītajā e-pastā saņemsiet dalības apstiprinājumu, kā arī unikālo kodu pieteikuma labošanai vai atsaukšanai.\n\nPieteikšanās tiešsaistē un izmaiņu veikšana ir iespējama līdz 24. septembra plkst. 12.00.\n\nJa izmaiņas rodas pēc šī termiņa — nebēdājiet, ikviens joprojām var droši pievienoties pārgājienam un reģistrēties uz vietas pasākuma dienā reģistrācijas punktā.',
         editLink: result.editLink || managePageUrl,
         editCode: result.editCode,
       });
@@ -221,7 +239,7 @@ export default function Home() {
 
         <form className="registration-form" onSubmit={handleSubmit}>
           {message && (
-            <div className={`form-message ${message.type}`}>
+            <div ref={messageRef} className={`form-message ${message.type}`}>
               <p>{message.text}</p>
             </div>
           )}
