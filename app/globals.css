@@ -381,6 +381,15 @@ select:disabled {
   text-transform: uppercase;
 }
 
+.city-date {
+  display: inline-block;
+  margin-top: 5px;
+  font-size: 13px;
+  line-height: 1.1;
+  font-weight: 800;
+  color: var(--beactive-yellow);
+}
+
 .distance-list {
   display: grid;
 }

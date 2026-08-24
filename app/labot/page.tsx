@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useRef, useState } from 'react';
-import { cityDistances, participationCities, type ParticipationCity } from '../content';
+import { cityDistances, cityEventDates, participationCities, type ParticipationCity } from '../content';
 
 type MessageState = {
   type: 'success' | 'error' | 'info';
@@ -292,9 +292,10 @@ export default function ManageRegistrationPage() {
               >
                 <option value="">Izvēlieties pilsētu</option>
                 {participationCities.map((city) => (
-                  <option key={city} value={city}>{city}</option>
+                  <option key={city} value={city}>{city} — {cityEventDates[city]}</option>
                 ))}
               </select>
+              {selectedCity && <span className="field-help">Norises datums: {cityEventDates[selectedCity]}</span>}
             </label>
 
             <label>

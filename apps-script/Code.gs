@@ -27,9 +27,15 @@ const STATUSES = {
 };
 
 const CITIES = {
-  'Liepāja': ['5 km', '14 km', '22 km'],
-  'Smiltene': ['7 km', '13 km', '21 km'],
-  'Ilūkste': ['5 km', '12 km', '19 km'],
+  'Liepāja': ['7 km', '16 km', '25 km'],
+  'Smiltene': ['8 km', '18 km', '28 km', 'Krēslas posms - 8 km'],
+  'Ilūkste': ['6 km', '14 km', '28 km', 'Krēslas posms - 1,5 km'],
+};
+
+const EVENT_DATES = {
+  'Liepāja': '26. septembrī',
+  'Smiltene': '26. septembrī',
+  'Ilūkste': '27. septembrī',
 };
 
 const BASE_HEADERS = [
@@ -481,6 +487,10 @@ function getCityLocative(city) {
   return locatives[String(city || '').trim()] || String(city || '').trim();
 }
 
+function getEventDate(city) {
+  return EVENT_DATES[String(city || '').trim()] || '27. septembrī';
+}
+
 function getSiteBaseUrl(editBaseUrl) {
   const cleanUrl = String(editBaseUrl || '').trim();
   if (!cleanUrl) return '';
@@ -514,7 +524,7 @@ function getLogoFooterHtml(editBaseUrl) {
 function getClosingPlain(city) {
   return [
     '',
-    `Tiekamies ${getCityLocative(city)} 27. septembrī!`,
+    `Tiekamies ${getCityLocative(city)} ${getEventDate(city)}!`,
     '',
     'Tavs sportisko pasākumu draugs – Latvijas Sporta federāciju padome!',
     '',
@@ -524,7 +534,7 @@ function getClosingPlain(city) {
 
 function getClosingHtml(city, editBaseUrl) {
   return `
-    <p style="margin-top: 22px;"><strong>Tiekamies ${escapeHtml(getCityLocative(city))} 27. septembrī!</strong></p>
+    <p style="margin-top: 22px;"><strong>Tiekamies ${escapeHtml(getCityLocative(city))} ${escapeHtml(getEventDate(city))}!</strong></p>
     <p>Tavs sportisko pasākumu draugs – Latvijas Sporta federāciju padome!</p>
     ${getLogoFooterHtml(editBaseUrl)}
   `;

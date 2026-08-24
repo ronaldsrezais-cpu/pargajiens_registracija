@@ -7,9 +7,9 @@ Vienkārša Next.js mājaslapa pārgājiena komandu reģistrācijai ar Google Sh
 - Pieteikšanās forma latviešu valodā.
 - Iespēja pievienot neierobežotu papildu dalībnieku skaitu.
 - Pilsētas un distances:
-  - Liepāja: 5 km, 14 km, 22 km
-  - Smiltene: 7 km, 13 km, 21 km
-  - Ilūkste: 5 km, 12 km, 19 km
+  - Liepāja: 26. septembris — 7 km, 16 km, 25 km
+  - Smiltene: 26. septembris — 8 km, 18 km, 28 km, Krēslas posms - 8 km
+  - Ilūkste: 27. septembris — 6 km, 14 km, 28 km, Krēslas posms - 1,5 km
 - Google Sheets datu saglabāšana.
 - Skaitītājs pa pilsētām un distancēm ar pilsētu ģerboņiem.
 - Unikāls pieteikuma labošanas kods katrai komandai.

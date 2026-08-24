@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useRef, useState } from 'react';
-import { cityDistances, participationCities, type ParticipationCity } from './content';
+import { cityDistances, cityEventDates, participationCities, type ParticipationCity } from './content';
 
 type MessageState = {
   type: 'success' | 'error' | 'info';
@@ -110,7 +110,10 @@ function RegistrationStats({ refreshKey }: { refreshKey: number }) {
             <div className="city-stats" key={city}>
               <div className="city-stats-title">
                 <img src={cityCrests[city]} alt={`${city} ģerbonis`} />
-                <h3>{city}</h3>
+                <div>
+                  <h3>{city}</h3>
+                  <span className="city-date">{cityEventDates[city]}</span>
+                </div>
               </div>
               <div className="distance-list">
                 {cityDistances[city].map((distance) => {
@@ -254,9 +257,10 @@ export default function Home() {
             >
               <option value="">Izvēlieties pilsētu</option>
               {participationCities.map((city) => (
-                <option key={city} value={city}>{city}</option>
+                <option key={city} value={city}>{city} — {cityEventDates[city]}</option>
               ))}
             </select>
+            {selectedCity && <span className="field-help">Norises datums: {cityEventDates[selectedCity]}</span>}
           </label>
 
           <label>
