@@ -304,7 +304,7 @@ export default function Home() {
             {additionalParticipants.map((participant, index) => (
               <div className="participant-field" key={`participant-${index}`}>
                 <label>
-                  Dalībnieks {index + 2}
+                  Dalībnieks {index + 2} (vārds)
                   <input
                     value={participant}
                     onChange={(event) => updateAdditionalParticipant(index, event.target.value)}

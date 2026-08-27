@@ -344,7 +344,7 @@ export default function ManageRegistrationPage() {
               {registration.participants.map((participant, index) => (
                 <div className="participant-field" key={`participant-${index}`}>
                   <label>
-                    Dalībnieks {index + 2}
+                    Dalībnieks {index + 2} (vārds)
                     <input
                       value={participant}
                       onChange={(event) => updateParticipant(index, event.target.value)}
