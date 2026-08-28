@@ -27,7 +27,7 @@ const STATUSES = {
 };
 
 const CITIES = {
-  'Liepāja': ['7 km', '16 km', '25 km'],
+  'Liepāja': ['7 km', '17 km', '24 km'],
   'Smiltene': ['8 km', '18 km', '28 km', 'Krēslas posms - 8 km'],
   'Ilūkste': ['6 km', '14 km', '28 km', 'Krēslas posms - 1,5 km'],
 };
@@ -565,11 +565,11 @@ function sendEmailMessage(options) {
 }
 
 function getDeadlinePlain() {
-  return 'Pieteikšanās tiešsaistē un izmaiņu veikšana ir iespējama līdz 24. septembra plkst. 12.00. Ja izmaiņas rodas pēc šī termiņa — nebēdājiet, ikviens joprojām var droši pievienoties pārgājienam un reģistrēties uz vietas pasākuma dienā reģistrācijas punktā.';
+  return 'Pieteikšanās tiešsaistē un izmaiņu veikšana ir iespējama līdz 24. septembra plkst. 12.00. Ja izmaiņas rodas pēc šī termiņa, ikviens joprojām var pievienoties pārgājienam un reģistrēties uz vietas pasākuma dienā reģistrācijas punktā.';
 }
 
 function getDeadlineHtml() {
-  return '<p>Pieteikšanās tiešsaistē un izmaiņu veikšana ir iespējama līdz <strong>24. septembra plkst. 12.00</strong>. Ja izmaiņas rodas pēc šī termiņa — nebēdājiet, ikviens joprojām var droši pievienoties pārgājienam un reģistrēties uz vietas pasākuma dienā reģistrācijas punktā.</p>';
+  return '<p>Pieteikšanās tiešsaistē un izmaiņu veikšana ir iespējama līdz <strong>24. septembra plkst. 12.00</strong>. Ja izmaiņas rodas pēc šī termiņa, ikviens joprojām var pievienoties pārgājienam un reģistrēties uz vietas pasākuma dienā reģistrācijas punktā.</p>';
 }
 
 function sendCreateEmail(data, editCode, editLink) {
