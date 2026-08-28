@@ -29,7 +29,7 @@ type StatsResponse = {
   updatedAt?: string;
 };
 
-const managePageUrl = 'https://pargajiensregistracija-khaki.vercel.app/labot';
+const managePageUrl = 'https://beactive.lv/pargajiens/labot/';
 
 const cityCrests: Record<ParticipationCity, string> = {
   Liepāja: '/crest-liepaja.png',

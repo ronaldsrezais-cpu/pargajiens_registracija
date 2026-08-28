@@ -26,6 +26,8 @@ type AppsScriptResponse = {
   emailSent?: boolean;
 };
 
+const PUBLIC_EDIT_BASE_URL = 'https://beactive.lv/pargajiens/labot/';
+
 const requiredFields: Array<keyof RegistrationPayload> = [
   'participationCity',
   'distance',
@@ -102,6 +104,7 @@ export async function POST(request: Request) {
         action: 'create',
         submittedAt: new Date().toISOString(),
         editBaseUrl: getEditBaseUrl(request),
+        publicEditBaseUrl: PUBLIC_EDIT_BASE_URL,
       }),
     });
 

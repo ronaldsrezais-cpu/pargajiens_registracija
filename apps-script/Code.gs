@@ -20,6 +20,7 @@ const SHEET_NAME = 'Registrations';
 const SENDER_EMAIL = 'latvijassportafederacijupadome@gmail.com';
 const SENDER_NAME = 'Latvijas Sporta federāciju padome';
 const BEACTIVE_WEBSITE_URL = 'https://beactive.lv/';
+const PUBLIC_EDIT_BASE_URL = 'https://beactive.lv/pargajiens/labot/';
 
 const STATUSES = {
   ACTIVE: 'Aktīvs',
@@ -341,6 +342,19 @@ function buildStats() {
   };
 }
 
+
+function buildEditLink(baseUrl, editCode) {
+  const cleanBaseUrl = String(baseUrl || '').trim();
+  const cleanCode = encodeURIComponent(String(editCode || '').trim());
+
+  if (!cleanBaseUrl || !cleanCode) {
+    return '';
+  }
+
+  const separator = cleanBaseUrl.includes('?') ? '&' : '?';
+  return `${cleanBaseUrl}${separator}code=${cleanCode}`;
+}
+
 function createRegistration(data) {
   const sheet = getSheet();
   const participants = getParticipantsFromData(data);
@@ -349,7 +363,8 @@ function createRegistration(data) {
   const now = data.submittedAt || new Date().toISOString();
   const editCode = createEditCode();
   const editBaseUrl = String(data.editBaseUrl || '').trim();
-  const editLink = editBaseUrl ? `${editBaseUrl}?code=${encodeURIComponent(editCode)}` : '';
+  const publicEditBaseUrl = String(data.publicEditBaseUrl || PUBLIC_EDIT_BASE_URL || editBaseUrl).trim();
+  const editLink = buildEditLink(publicEditBaseUrl, editCode);
 
   if (!isValidCityAndDistance(data.participationCity, data.distance)) {
     return jsonResponse({ ok: false, message: 'Pilsēta vai distance nav derīga.' });
