@@ -124,14 +124,14 @@ export async function POST(request: Request) {
       );
     }
 
-    const deadlineNote = 'Pieteikšanās tiešsaistē un izmaiņu veikšana ir iespējama līdz 24. septembra plkst. 12.00. Ja izmaiņas rodas pēc šī termiņa, ikviens joprojām var pievienoties pārgājienam un reģistrēties uz vietas pasākuma dienā reģistrācijas punktā.';
+    const deadlineNote = 'Pieteikšanās tiešsaistē un izmaiņu veikšana ir iespējama līdz 24. septembra plkst. 12.00.';
     const emailNote = result.emailSent === false
       ? 'Pieteikums ir saglabāts, bet apstiprinājuma e-pastu neizdevās nosūtīt. Ja nepieciešams, sazinieties ar organizatoriem.'
-      : 'Dalības apstiprinājums, kā arī unikālais kods pieteikuma labošanai vai atsaukšanai ir nosūtīti uz kapteiņa e-pastu.';
+      : 'Kapteiņa norādītajā e-pastā saņemsiet dalības apstiprinājumu, kā arī unikālo kodu pieteikuma labošanai vai atsaukšanai.';
 
     return NextResponse.json({
       ok: true,
-      message: `Paldies! Pieteikums ir saņemts.
+      message: `Paldies! Dalība apstiprināta!
 ${emailNote}
 
 ${deadlineNote}`,

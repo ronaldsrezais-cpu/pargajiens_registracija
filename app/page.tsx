@@ -233,7 +233,7 @@ export default function Home() {
         type: result.demoMode ? 'info' : 'success',
         text:
           result.message ||
-          'Paldies! Dalība apstiprināta!\nKapteiņa norādītajā e-pastā saņemsiet dalības apstiprinājumu, kā arī unikālo kodu pieteikuma labošanai vai atsaukšanai.\n\nPieteikšanās tiešsaistē un izmaiņu veikšana ir iespējama līdz 24. septembra plkst. 12.00.\n\nJa izmaiņas rodas pēc šī termiņa, ikviens joprojām var pievienoties pārgājienam un reģistrēties uz vietas pasākuma dienā reģistrācijas punktā.',
+          'Paldies! Dalība apstiprināta!\nKapteiņa norādītajā e-pastā saņemsiet dalības apstiprinājumu, kā arī unikālo kodu pieteikuma labošanai vai atsaukšanai.\n\nPieteikšanās tiešsaistē un izmaiņu veikšana ir iespējama līdz 24. septembra plkst. 12.00.',
         editLink: result.editLink || managePageUrl,
         editCode: result.editCode,
       });

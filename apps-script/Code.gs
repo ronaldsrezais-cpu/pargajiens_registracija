@@ -592,11 +592,11 @@ function sendEmailMessage(options) {
 }
 
 function getDeadlinePlain() {
-  return 'Pieteikšanās tiešsaistē un izmaiņu veikšana ir iespējama līdz 24. septembra plkst. 12.00. Ja izmaiņas rodas pēc šī termiņa, ikviens joprojām var pievienoties pārgājienam un reģistrēties uz vietas pasākuma dienā reģistrācijas punktā.';
+  return 'Pieteikšanās tiešsaistē un izmaiņu veikšana ir iespējama līdz 24. septembra plkst. 12.00.';
 }
 
 function getDeadlineHtml() {
-  return '<p>Pieteikšanās tiešsaistē un izmaiņu veikšana ir iespējama līdz <strong>24. septembra plkst. 12.00</strong>. Ja izmaiņas rodas pēc šī termiņa, ikviens joprojām var pievienoties pārgājienam un reģistrēties uz vietas pasākuma dienā reģistrācijas punktā.</p>';
+  return '<p>Pieteikšanās tiešsaistē un izmaiņu veikšana ir iespējama līdz <strong>24. septembra plkst. 12.00</strong>.</p>';
 }
 
 function sendCreateEmail(data, editCode, editLink) {
