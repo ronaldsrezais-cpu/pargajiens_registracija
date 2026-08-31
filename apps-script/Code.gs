@@ -29,7 +29,7 @@ const STATUSES = {
 
 const CITIES = {
   'Liepāja': ['7 km', '17 km', '24 km'],
-  'Smiltene': ['8 km', '18 km', '28 km', 'Krēslas posms - 8 km'],
+  'Smiltene': ['8 km – “ĶELMĒNI” distance', '18 km – “SMILTENES PIENS” distance', '28 km – “top!” distance', 'Krēslas posms - 8 km'],
   'Ilūkste': ['6 km', '14 km', '28 km', 'Krēslas posms - 1,5 km'],
 };
 
@@ -51,6 +51,7 @@ const BASE_HEADERS = [
   'Kapteinis',
   'Kapteiņa e-pasts',
   'Kapteiņa tālrunis',
+  'Foto/video apstiprinājums',
 ];
 
 const INITIAL_PARTICIPANT_HEADERS = [
@@ -167,6 +168,7 @@ function rowToObject(row, map) {
     captainName: get('Kapteinis'),
     captainEmail: get('Kapteiņa e-pasts'),
     captainPhone: get('Kapteiņa tālrunis'),
+    dataConsent: get('Foto/video apstiprinājums') === 'Jā',
     participants,
   };
 
@@ -228,7 +230,7 @@ function getParticipantValuesByHeader(participants, map) {
 function normaliseDistance(value) {
   const text = String(value || '').trim();
   if (!text) return '';
-  return text.endsWith('km') ? text : `${text} km`;
+  return /km\b/i.test(text) ? text : `${text} km`;
 }
 
 function normaliseCode(value) {
@@ -370,6 +372,10 @@ function createRegistration(data) {
     return jsonResponse({ ok: false, message: 'Pilsēta vai distance nav derīga.' });
   }
 
+  if (!data.dataConsent) {
+    return jsonResponse({ ok: false, message: 'Lūdzu, apstipriniet, ka esat informēts par fotografēšanu un filmēšanu pasākuma laikā.' });
+  }
+
   const row = buildRowFromObject(Object.assign({
     'Pieteikuma kods': editCode,
     'Statuss': STATUSES.ACTIVE,
@@ -382,6 +388,7 @@ function createRegistration(data) {
     'Kapteinis': data.captainName || '',
     'Kapteiņa e-pasts': data.captainEmail || '',
     'Kapteiņa tālrunis': data.captainPhone || '',
+    'Foto/video apstiprinājums': data.dataConsent ? 'Jā' : '',
   }, getParticipantValuesByHeader(participants, map)), map);
 
   sheet.appendRow(row);
@@ -426,6 +433,10 @@ function updateRegistration(data) {
     return jsonResponse({ ok: false, message: 'Pilsēta vai distance nav derīga.' });
   }
 
+  if (!data.dataConsent) {
+    return jsonResponse({ ok: false, message: 'Lūdzu, apstipriniet, ka esat informēts par fotografēšanu un filmēšanu pasākuma laikā.' });
+  }
+
   const participants = getParticipantsFromData(data);
   ensureParticipantHeaders(sheet, participants.length);
   const map = getHeaderMap(sheet);
@@ -440,6 +451,7 @@ function updateRegistration(data) {
     'Kapteinis': data.captainName || '',
     'Kapteiņa e-pasts': data.captainEmail || '',
     'Kapteiņa tālrunis': data.captainPhone || '',
+    'Foto/video apstiprinājums': data.dataConsent ? 'Jā' : '',
   }, getParticipantValuesByHeader(participants, map)), map);
 
   const updated = findRegistrationByCode(sheet, data.editCode);

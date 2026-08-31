@@ -19,6 +19,7 @@ type ManagePayload = {
   participant2?: string;
   participant3?: string;
   participant4?: string;
+  dataConsent?: boolean;
 };
 
 function isParticipationCity(value: string | undefined): value is ParticipationCity {
@@ -57,6 +58,10 @@ function validateUpdate(body: ManagePayload) {
   const missingField = requiredFields.find((field) => !body[field]);
   if (missingField) {
     return 'Lūdzu, aizpildiet visus obligātos laukus.';
+  }
+
+  if (!body.dataConsent) {
+    return 'Lūdzu, apstipriniet, ka esat informēts par fotografēšanu un filmēšanu pasākuma laikā.';
   }
 
   return null;

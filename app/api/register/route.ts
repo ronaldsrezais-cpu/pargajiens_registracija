@@ -81,7 +81,7 @@ export async function POST(request: Request) {
 
     if (!body.dataConsent) {
       return NextResponse.json(
-        { ok: false, message: 'Lūdzu, apstipriniet datu izmantošanu pieteikuma apstrādei.' },
+        { ok: false, message: 'Lūdzu, apstipriniet, ka esat informēts par fotografēšanu un filmēšanu pasākuma laikā.' },
         { status: 400 }
       );
     }

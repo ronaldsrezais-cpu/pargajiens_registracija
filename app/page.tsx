@@ -332,7 +332,7 @@ export default function Home() {
 
           <label className="checkbox-label">
             <input type="checkbox" name="dataConsent" required />
-            <span>Piekrītu, ka sniegtā informācija tiek izmantota pieteikuma apstrādei. *</span>
+            <span>Apstiprinu, ka esmu informēts par fotografēšanu un filmēšanu #BeActive pārgājiena laikā un iegūto materiālu iespējamu izmantošanu LSFP un attiecīgās pārgājiena norises vietas organizatora komunikācijā. *</span>
           </label>
 
           <button type="submit" className="submit-button" disabled={isSubmitting}>

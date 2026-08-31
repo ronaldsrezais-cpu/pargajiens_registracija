@@ -23,6 +23,7 @@ type RegistrationData = {
   participant2?: string;
   participant3?: string;
   participant4?: string;
+  dataConsent: boolean;
 };
 
 function getParticipantsFromRegistration(registration: Partial<RegistrationData> | undefined) {
@@ -49,6 +50,7 @@ function emptyRegistration(editCode = ''): RegistrationData {
     captainEmail: '',
     captainPhone: '',
     participants: [],
+    dataConsent: false,
   };
 }
 
@@ -374,6 +376,18 @@ export default function ManageRegistrationPage() {
                 </div>
               )}
             </div>
+
+            {!isCancelled && (
+              <label className="checkbox-label full-row">
+                <input
+                  type="checkbox"
+                  checked={Boolean(registration.dataConsent)}
+                  onChange={(event) => setRegistration({ ...registration, dataConsent: event.target.checked })}
+                  required
+                />
+                <span>Apstiprinu, ka esmu informēts par fotografēšanu un filmēšanu #BeActive pārgājiena laikā un iegūto materiālu iespējamu izmantošanu LSFP un attiecīgās pārgājiena norises vietas organizatora komunikācijā. *</span>
+              </label>
+            )}
 
             {!isCancelled && (
               <div className="button-row">
