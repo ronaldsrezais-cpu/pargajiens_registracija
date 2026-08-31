@@ -38,6 +38,26 @@ const cityCrests: Record<ParticipationCity, string> = {
 };
 
 
+function getStatsDistanceLabel(city: ParticipationCity, distance: string) {
+  if (city !== 'Smiltene') {
+    return distance;
+  }
+
+  if (distance.startsWith('8 km')) {
+    return '8 km';
+  }
+
+  if (distance.startsWith('18 km')) {
+    return '18 km';
+  }
+
+  if (distance.startsWith('28 km')) {
+    return '28 km';
+  }
+
+  return distance;
+}
+
 function latvianCountLabel(count: number, singular: string, plural: string) {
   const absoluteCount = Math.abs(count);
   const lastTwoDigits = absoluteCount % 100;
@@ -121,7 +141,7 @@ function RegistrationStats({ refreshKey }: { refreshKey: number }) {
 
                   return (
                     <div className="distance-row" key={`${city}-${distance}`}>
-                      <strong className="distance-badge">{distance}</strong>
+                      <strong className="distance-badge">{getStatsDistanceLabel(city, distance)}</strong>
                       <span><b>{row?.teams || 0}</b> {latvianCountLabel(row?.teams || 0, 'komanda', 'komandas')}</span>
                       <span><b>{row?.participants || 0}</b> {latvianCountLabel(row?.participants || 0, 'dalībnieks', 'dalībnieki')}</span>
                     </div>
