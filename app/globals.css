@@ -366,12 +366,18 @@ select:disabled {
   color: var(--white);
 }
 
-.city-stats-title img {
+.city-stats-title img.city-logo {
   width: 46px;
   height: 46px;
   object-fit: contain;
   flex: 0 0 46px;
   filter: drop-shadow(0 1px 1px rgba(255, 255, 255, 0.18));
+}
+
+.city-stats-title img.city-logo-liepaja {
+  width: 86px;
+  height: 46px;
+  flex-basis: 86px;
 }
 
 .city-stats h3 {

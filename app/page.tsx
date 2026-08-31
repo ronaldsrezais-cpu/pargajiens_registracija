@@ -129,7 +129,11 @@ function RegistrationStats({ refreshKey }: { refreshKey: number }) {
           {participationCities.map((city) => (
             <div className="city-stats" key={city}>
               <div className="city-stats-title">
-                <img src={cityCrests[city]} alt={`${city} ģerbonis`} />
+                <img
+                  className={city === 'Liepāja' ? 'city-logo city-logo-liepaja' : 'city-logo'}
+                  src={cityCrests[city]}
+                  alt={`${city} logo`}
+                />
                 <div>
                   <h3>{city}</h3>
                   <span className="city-date">{cityEventDates[city]}</span>
