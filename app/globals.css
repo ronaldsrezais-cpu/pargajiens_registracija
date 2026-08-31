@@ -133,12 +133,19 @@ select:disabled {
 }
 
 .checkbox-label {
-  grid-template-columns: 22px 1fr;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
   align-items: start;
   gap: 12px;
+  width: 100%;
+  max-width: none;
   font-size: 14px;
   line-height: 1.45;
   font-weight: 700;
+}
+
+.checkbox-label span {
+  min-width: 0;
 }
 
 .checkbox-label input {
@@ -601,6 +608,8 @@ select:disabled {
 
 .consent-list {
   display: grid;
+  grid-column: 1 / -1;
+  width: 100%;
   gap: 12px;
 }
 
