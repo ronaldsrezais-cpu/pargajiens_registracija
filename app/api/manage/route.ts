@@ -19,6 +19,8 @@ type ManagePayload = {
   participant2?: string;
   participant3?: string;
   participant4?: string;
+  photoConsent?: boolean;
+  safetyConsent?: boolean;
   dataConsent?: boolean;
 };
 
@@ -60,8 +62,8 @@ function validateUpdate(body: ManagePayload) {
     return 'Lūdzu, aizpildiet visus obligātos laukus.';
   }
 
-  if (!body.dataConsent) {
-    return 'Lūdzu, apstipriniet, ka esat informēts par fotografēšanu un filmēšanu pasākuma laikā.';
+  if (!body.photoConsent || !body.safetyConsent || !body.dataConsent) {
+    return 'Lūdzu, apstipriniet visus obligātos nosacījumus.';
   }
 
   return null;

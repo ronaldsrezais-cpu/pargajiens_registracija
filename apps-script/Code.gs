@@ -52,6 +52,8 @@ const BASE_HEADERS = [
   'Kapteiņa e-pasts',
   'Kapteiņa tālrunis',
   'Foto/video apstiprinājums',
+  'Drošības noteikumu apstiprinājums',
+  'Datu izmantošanas apstiprinājums',
 ];
 
 const INITIAL_PARTICIPANT_HEADERS = [
@@ -168,7 +170,9 @@ function rowToObject(row, map) {
     captainName: get('Kapteinis'),
     captainEmail: get('Kapteiņa e-pasts'),
     captainPhone: get('Kapteiņa tālrunis'),
-    dataConsent: get('Foto/video apstiprinājums') === 'Jā',
+    photoConsent: get('Foto/video apstiprinājums') === 'Jā',
+    safetyConsent: get('Drošības noteikumu apstiprinājums') === 'Jā',
+    dataConsent: get('Datu izmantošanas apstiprinājums') === 'Jā',
     participants,
   };
 
@@ -372,8 +376,8 @@ function createRegistration(data) {
     return jsonResponse({ ok: false, message: 'Pilsēta vai distance nav derīga.' });
   }
 
-  if (!data.dataConsent) {
-    return jsonResponse({ ok: false, message: 'Lūdzu, apstipriniet, ka esat informēts par fotografēšanu un filmēšanu pasākuma laikā.' });
+  if (!data.photoConsent || !data.safetyConsent || !data.dataConsent) {
+    return jsonResponse({ ok: false, message: 'Lūdzu, apstipriniet visus obligātos nosacījumus.' });
   }
 
   const row = buildRowFromObject(Object.assign({
@@ -388,7 +392,9 @@ function createRegistration(data) {
     'Kapteinis': data.captainName || '',
     'Kapteiņa e-pasts': data.captainEmail || '',
     'Kapteiņa tālrunis': data.captainPhone || '',
-    'Foto/video apstiprinājums': data.dataConsent ? 'Jā' : '',
+    'Foto/video apstiprinājums': data.photoConsent ? 'Jā' : '',
+    'Drošības noteikumu apstiprinājums': data.safetyConsent ? 'Jā' : '',
+    'Datu izmantošanas apstiprinājums': data.dataConsent ? 'Jā' : '',
   }, getParticipantValuesByHeader(participants, map)), map);
 
   sheet.appendRow(row);
@@ -433,8 +439,8 @@ function updateRegistration(data) {
     return jsonResponse({ ok: false, message: 'Pilsēta vai distance nav derīga.' });
   }
 
-  if (!data.dataConsent) {
-    return jsonResponse({ ok: false, message: 'Lūdzu, apstipriniet, ka esat informēts par fotografēšanu un filmēšanu pasākuma laikā.' });
+  if (!data.photoConsent || !data.safetyConsent || !data.dataConsent) {
+    return jsonResponse({ ok: false, message: 'Lūdzu, apstipriniet visus obligātos nosacījumus.' });
   }
 
   const participants = getParticipantsFromData(data);
@@ -451,7 +457,9 @@ function updateRegistration(data) {
     'Kapteinis': data.captainName || '',
     'Kapteiņa e-pasts': data.captainEmail || '',
     'Kapteiņa tālrunis': data.captainPhone || '',
-    'Foto/video apstiprinājums': data.dataConsent ? 'Jā' : '',
+    'Foto/video apstiprinājums': data.photoConsent ? 'Jā' : '',
+    'Drošības noteikumu apstiprinājums': data.safetyConsent ? 'Jā' : '',
+    'Datu izmantošanas apstiprinājums': data.dataConsent ? 'Jā' : '',
   }, getParticipantValuesByHeader(participants, map)), map);
 
   const updated = findRegistrationByCode(sheet, data.editCode);

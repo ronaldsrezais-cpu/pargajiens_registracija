@@ -216,6 +216,8 @@ export default function Home() {
       captainEmail: formData.get('captainEmail'),
       captainPhone: formData.get('captainPhone'),
       participants,
+      photoConsent: formData.get('photoConsent') === 'on',
+      safetyConsent: formData.get('safetyConsent') === 'on',
       dataConsent: formData.get('dataConsent') === 'on',
     };
 
@@ -354,10 +356,22 @@ export default function Home() {
             </div>
           </div>
 
-          <label className="checkbox-label">
-            <input type="checkbox" name="dataConsent" required />
-            <span>Apstiprinu, ka esmu informēts par fotografēšanu un filmēšanu #BeActive pārgājiena laikā un iegūto materiālu iespējamu izmantošanu LSFP un attiecīgās pārgājiena norises vietas organizatora komunikācijā. *</span>
-          </label>
+          <div className="consent-list">
+            <label className="checkbox-label">
+              <input type="checkbox" name="photoConsent" required />
+              <span>Apstiprinu, ka esmu informēts par fotografēšanu un filmēšanu #BeActive pārgājiena laikā un iegūto materiālu iespējamu izmantošanu LSFP un attiecīgās pārgājiena norises vietas organizatora komunikācijā. *</span>
+            </label>
+
+            <label className="checkbox-label">
+              <input type="checkbox" name="safetyConsent" required />
+              <span>Apstiprinu, ka pārgājiena laikā ievērosim organizatoru norādījumus un drošības noteikumus, sekosim marķētajam maršrutam un saudzēsim dabu. Piesakot komandu izvēlētajai distancei, esmu pārliecinājies, ka tā atbilst manām un komandas biedru fiziskajām spējām, un apņemamies piedalīties atbildīgi un atbilstoši savām spējām. *</span>
+            </label>
+
+            <label className="checkbox-label">
+              <input type="checkbox" name="dataConsent" required />
+              <span>Apstiprinu datu izmantošanu pieteikuma apstrādei. *</span>
+            </label>
+          </div>
 
           <button type="submit" className="submit-button" disabled={isSubmitting}>
             {isSubmitting ? 'Nosūta…' : 'Nosūtīt pieteikumu'}

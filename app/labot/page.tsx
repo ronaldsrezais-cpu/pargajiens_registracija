@@ -23,6 +23,8 @@ type RegistrationData = {
   participant2?: string;
   participant3?: string;
   participant4?: string;
+  photoConsent: boolean;
+  safetyConsent: boolean;
   dataConsent: boolean;
 };
 
@@ -50,6 +52,8 @@ function emptyRegistration(editCode = ''): RegistrationData {
     captainEmail: '',
     captainPhone: '',
     participants: [],
+    photoConsent: false,
+    safetyConsent: false,
     dataConsent: false,
   };
 }
@@ -378,15 +382,37 @@ export default function ManageRegistrationPage() {
             </div>
 
             {!isCancelled && (
-              <label className="checkbox-label full-row">
-                <input
-                  type="checkbox"
-                  checked={Boolean(registration.dataConsent)}
-                  onChange={(event) => setRegistration({ ...registration, dataConsent: event.target.checked })}
-                  required
-                />
-                <span>Apstiprinu, ka esmu informēts par fotografēšanu un filmēšanu #BeActive pārgājiena laikā un iegūto materiālu iespējamu izmantošanu LSFP un attiecīgās pārgājiena norises vietas organizatora komunikācijā. *</span>
-              </label>
+              <div className="consent-list full-row">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(registration.photoConsent)}
+                    onChange={(event) => setRegistration({ ...registration, photoConsent: event.target.checked })}
+                    required
+                  />
+                  <span>Apstiprinu, ka esmu informēts par fotografēšanu un filmēšanu #BeActive pārgājiena laikā un iegūto materiālu iespējamu izmantošanu LSFP un attiecīgās pārgājiena norises vietas organizatora komunikācijā. *</span>
+                </label>
+
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(registration.safetyConsent)}
+                    onChange={(event) => setRegistration({ ...registration, safetyConsent: event.target.checked })}
+                    required
+                  />
+                  <span>Apstiprinu, ka pārgājiena laikā ievērosim organizatoru norādījumus un drošības noteikumus, sekosim marķētajam maršrutam un saudzēsim dabu. Piesakot komandu izvēlētajai distancei, esmu pārliecinājies, ka tā atbilst manām un komandas biedru fiziskajām spējām, un apņemamies piedalīties atbildīgi un atbilstoši savām spējām. *</span>
+                </label>
+
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(registration.dataConsent)}
+                    onChange={(event) => setRegistration({ ...registration, dataConsent: event.target.checked })}
+                    required
+                  />
+                  <span>Apstiprinu datu izmantošanu pieteikuma apstrādei. *</span>
+                </label>
+              </div>
             )}
 
             {!isCancelled && (

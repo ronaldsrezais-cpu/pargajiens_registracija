@@ -15,6 +15,8 @@ type RegistrationPayload = {
   participant2?: string;
   participant3?: string;
   participant4?: string;
+  photoConsent?: boolean;
+  safetyConsent?: boolean;
   dataConsent?: boolean;
 };
 
@@ -79,9 +81,9 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!body.dataConsent) {
+    if (!body.photoConsent || !body.safetyConsent || !body.dataConsent) {
       return NextResponse.json(
-        { ok: false, message: 'Lūdzu, apstipriniet, ka esat informēts par fotografēšanu un filmēšanu pasākuma laikā.' },
+        { ok: false, message: 'Lūdzu, apstipriniet visus obligātos nosacījumus.' },
         { status: 400 }
       );
     }
