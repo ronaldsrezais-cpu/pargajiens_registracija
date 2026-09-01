@@ -18,6 +18,8 @@
 html,
 body {
   min-height: 100%;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 body {
@@ -409,9 +411,9 @@ select:disabled {
 
 .distance-row {
   display: grid;
-  grid-template-columns: auto 1fr 1fr;
-  gap: 10px;
-  align-items: center;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  align-items: start;
   padding: 12px 15px;
   border-top: 2px solid var(--black);
   font-weight: 700;
@@ -424,8 +426,9 @@ select:disabled {
 .distance-badge {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   width: fit-content;
+  max-width: 100%;
   min-height: 34px;
   padding: 6px 12px;
   border: 2px solid var(--black);
@@ -433,11 +436,14 @@ select:disabled {
   background: var(--beactive-yellow);
   color: var(--black);
   font-size: 18px;
-  line-height: 1;
+  line-height: 1.1;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .distance-row span {
-  white-space: nowrap;
+  white-space: normal;
+  min-width: 0;
 }
 
 .distance-row span b {
@@ -451,6 +457,43 @@ select:disabled {
   border-radius: 16px;
   background: rgba(37, 152, 213, 0.12);
   font-weight: 800;
+}
+
+
+@media (max-width: 520px) {
+  .stats-block {
+    padding: 18px 12px;
+  }
+
+  .city-stats-title {
+    padding: 12px;
+  }
+
+  .city-stats-title img.city-logo {
+    width: 42px;
+    height: 42px;
+    flex-basis: 42px;
+  }
+
+  .city-stats-title img.city-logo-liepaja {
+    width: 78px;
+    height: 42px;
+    flex-basis: 78px;
+  }
+
+  .distance-row {
+    padding: 13px 12px;
+  }
+
+  .distance-badge {
+    font-size: 17px;
+    border-radius: 18px;
+  }
+
+  .distance-row span,
+  .distance-row span b {
+    font-size: 17px;
+  }
 }
 
 @media (min-width: 720px) {
