@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { cityDistances, type ParticipationCity } from '../../content';
+import { cityDistances, deadlineMessage, type ParticipationCity } from '../../content';
 import { GOOGLE_APPS_SCRIPT_URL } from '../../settings';
 
 type RegistrationPayload = {
@@ -126,7 +126,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const deadlineNote = 'Pieteikšanās tiešsaistē un izmaiņu veikšana ir iespējama līdz 24. septembra plkst. 12.00.';
+    const deadlineNote = deadlineMessage;
     const emailNote = result.emailSent === false
       ? 'Pieteikums ir saglabāts, bet apstiprinājuma e-pastu neizdevās nosūtīt. Ja nepieciešams, sazinieties ar organizatoriem.'
       : 'Kapteiņa norādītajā e-pastā saņemsiet dalības apstiprinājumu, kā arī unikālo kodu pieteikuma labošanai vai atsaukšanai.';

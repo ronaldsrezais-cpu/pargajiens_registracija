@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { cityDistances, type ParticipationCity } from '../../content';
+import { cityDistances, editDeadlineDisplay, editDeadlineIso, type ParticipationCity } from '../../content';
 import { GOOGLE_APPS_SCRIPT_URL } from '../../settings';
 
 export const dynamic = 'force-dynamic';
@@ -38,6 +38,11 @@ function getEndpoint() {
 function getEditBaseUrl(request: Request) {
   const origin = request.headers.get('origin') || new URL(request.url).origin;
   return `${origin}/labot`;
+}
+
+
+function isEditDeadlinePassed() {
+  return Date.now() >= new Date(editDeadlineIso).getTime();
 }
 
 function validateUpdate(body: ManagePayload) {
@@ -89,6 +94,13 @@ export async function POST(request: Request) {
     }
 
     if (body.action === 'update') {
+      if (isEditDeadlinePassed()) {
+        return NextResponse.json(
+          { ok: false, message: `Labojumu veikšana ir slēgta. Labojumi un personalizētie numuri bija iespējami līdz ${editDeadlineDisplay}.` },
+          { status: 403 }
+        );
+      }
+
       const validationError = validateUpdate(body);
       if (validationError) {
         return NextResponse.json({ ok: false, message: validationError }, { status: 400 });

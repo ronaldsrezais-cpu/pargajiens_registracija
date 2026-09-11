@@ -20,6 +20,8 @@ const SHEET_NAME = 'Registrations';
 const SENDER_EMAIL = 'latvijassportafederacijupadome@gmail.com';
 const SENDER_NAME = 'Latvijas Sporta federāciju padome';
 const BEACTIVE_WEBSITE_URL = 'https://beactive.lv/';
+const EDIT_DEADLINE_ISO = '2026-09-21T15:00:00+03:00';
+const EDIT_DEADLINE_DISPLAY = '21.09.2026. plkst. 15.00';
 const PUBLIC_EDIT_BASE_URL = 'https://beactive.lv/pargajiens/labot/';
 
 const STATUSES = {
@@ -51,6 +53,10 @@ const BASE_HEADERS = [
   'Kapteinis',
   'Kapteiņa e-pasts',
   'Kapteiņa tālrunis',
+  'E-pasts nosūtīts',
+  'E-pasts nosūtīts plkst.',
+  'E-pasta kļūda',
+  'Pēdējais e-pasta mēģinājums',
   'Foto/video apstiprinājums',
   'Drošības noteikumu apstiprinājums',
   'Datu izmantošanas apstiprinājums',
@@ -204,6 +210,49 @@ function setRowValues(sheet, rowNumber, valuesByHeader, map) {
       sheet.getRange(rowNumber, index + 1).setValue(valuesByHeader[header]);
     }
   });
+}
+
+function getErrorMessage(error) {
+  if (!error) return '';
+  if (error && error.message) return String(error.message);
+  return String(error);
+}
+
+function isValidEmailAddress(email) {
+  const cleanEmail = String(email || '').trim();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail);
+}
+
+function markEmailResult(sheet, rowNumber, result) {
+  ensureHeaders(sheet);
+  const map = getHeaderMap(sheet);
+  const now = new Date().toISOString();
+
+  setRowValues(sheet, rowNumber, {
+    'E-pasts nosūtīts': result && result.ok ? 'Jā' : 'Nē',
+    'E-pasts nosūtīts plkst.': result && result.ok ? now : '',
+    'E-pasta kļūda': result && result.ok ? '' : getErrorMessage(result && result.error ? result.error : 'Nezināma e-pasta sūtīšanas kļūda'),
+    'Pēdējais e-pasta mēģinājums': now,
+  }, map);
+}
+
+function runEmailSendWithRetry(sendFunction) {
+  try {
+    sendFunction();
+    return { ok: true, error: '' };
+  } catch (firstError) {
+    Utilities.sleep(800);
+
+    try {
+      sendFunction();
+      return { ok: true, error: '' };
+    } catch (secondError) {
+      return {
+        ok: false,
+        error: getErrorMessage(secondError) || getErrorMessage(firstError),
+      };
+    }
+  }
 }
 
 function getParticipantsFromData(data) {
@@ -398,14 +447,17 @@ function createRegistration(data) {
   }, getParticipantValuesByHeader(participants, map)), map);
 
   sheet.appendRow(row);
+  const rowNumber = sheet.getLastRow();
 
-  const emailSent = sendCreateEmail(Object.assign({}, data, { participants }), editCode, editLink);
+  const emailResult = sendCreateEmail(Object.assign({}, data, { participants }), editCode, editLink);
+  markEmailResult(sheet, rowNumber, emailResult);
 
   return jsonResponse({
     ok: true,
     editCode,
     editLink,
-    emailSent,
+    emailSent: Boolean(emailResult && emailResult.ok),
+    emailError: emailResult && emailResult.error ? String(emailResult.error) : '',
   });
 }
 
@@ -423,6 +475,10 @@ function lookupRegistration(data) {
   });
 }
 
+function isEditDeadlinePassed() {
+  return new Date().getTime() >= new Date(EDIT_DEADLINE_ISO).getTime();
+}
+
 function updateRegistration(data) {
   const sheet = getSheet();
   const found = findRegistrationByCode(sheet, data.editCode);
@@ -433,6 +489,10 @@ function updateRegistration(data) {
 
   if (found.registration.status === STATUSES.CANCELLED) {
     return jsonResponse({ ok: false, message: 'Atsauktu pieteikumu vairs nevar labot.' });
+  }
+
+  if (isEditDeadlinePassed()) {
+    return jsonResponse({ ok: false, message: `Labojumu veikšana ir slēgta. Labojumi un personalizētie numuri bija iespējami līdz ${EDIT_DEADLINE_DISPLAY}.` });
   }
 
   if (!isValidCityAndDistance(data.participationCity, data.distance)) {
@@ -576,6 +636,15 @@ function getClosingHtml(city, editBaseUrl) {
 }
 
 function sendEmailMessage(options) {
+  const to = String(options.to || '').trim();
+
+  if (!isValidEmailAddress(to)) {
+    return {
+      ok: false,
+      error: `Nederīga kapteiņa e-pasta adrese: ${to || 'nav norādīta'}`,
+    };
+  }
+
   const emailOptions = {
     htmlBody: options.htmlBody,
     name: SENDER_NAME,
@@ -583,28 +652,53 @@ function sendEmailMessage(options) {
   };
 
   try {
-    const aliases = GmailApp.getAliases ? GmailApp.getAliases() : [];
-    if (aliases.includes(SENDER_EMAIL)) {
-      GmailApp.sendEmail(options.to, options.subject, options.body, Object.assign({}, emailOptions, {
-        from: SENDER_EMAIL,
-      }));
-      return true;
-    }
-  } catch (error) {
-    console.error(error);
-  }
+    const aliases = GmailApp.getAliases();
+    const aliasEmails = aliases.map(String).map((value) => value.trim().toLowerCase());
+    const effectiveUserEmail = String(Session.getEffectiveUser().getEmail() || '').trim().toLowerCase();
+    const senderEmail = String(SENDER_EMAIL || '').trim().toLowerCase();
 
-  // Avoid sending from a private account if the sender alias is not available.
-  console.error(`Sender alias is not available: ${SENDER_EMAIL}`);
-  return false;
+    Logger.log('Remaining daily mail quota: ' + MailApp.getRemainingDailyQuota());
+    Logger.log('Effective user email: ' + effectiveUserEmail);
+    Logger.log('Configured sender email: ' + senderEmail);
+    Logger.log('Available Gmail aliases: ' + JSON.stringify(aliases));
+
+    if (aliasEmails.includes(senderEmail)) {
+      return runEmailSendWithRetry(function() {
+        GmailApp.sendEmail(
+          to,
+          options.subject,
+          options.body,
+          Object.assign({}, emailOptions, {
+            from: SENDER_EMAIL,
+          })
+        );
+      });
+    }
+
+    if (effectiveUserEmail === senderEmail) {
+      return runEmailSendWithRetry(function() {
+        GmailApp.sendEmail(to, options.subject, options.body, emailOptions);
+      });
+    }
+
+    return {
+      ok: false,
+      error: 'Sūtītāja adrese nav pieejama šim Apps Script kontam. Pārbaudiet Send mail as / alias vai deployment kontu.',
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      error: getErrorMessage(error),
+    };
+  }
 }
 
 function getDeadlinePlain() {
-  return 'Pieteikšanās tiešsaistē un izmaiņu veikšana ir iespējama līdz 24. septembra plkst. 12.00.';
+  return `Labojumi un personalizētie numuri iespējami līdz ${EDIT_DEADLINE_DISPLAY}.`;
 }
 
 function getDeadlineHtml() {
-  return '<p>Pieteikšanās tiešsaistē un izmaiņu veikšana ir iespējama līdz <strong>24. septembra plkst. 12.00</strong>.</p>';
+  return `<p>Labojumi un personalizētie numuri iespējami līdz <strong>${EDIT_DEADLINE_DISPLAY}</strong>.</p>`;
 }
 
 function sendCreateEmail(data, editCode, editLink) {
@@ -612,7 +706,7 @@ function sendCreateEmail(data, editCode, editLink) {
     const email = String(data.captainEmail || '').trim();
 
     if (!email) {
-      return false;
+      return { ok: false, error: 'Nav norādīts kapteiņa e-pasts.' };
     }
 
     const subject = 'Apstiprinājums dalībai BeActive Pārgājienā 2026';
@@ -651,15 +745,14 @@ function sendCreateEmail(data, editCode, editLink) {
       htmlBody,
     });
   } catch (error) {
-    console.error(error);
-    return false;
+    return { ok: false, error: getErrorMessage(error) };
   }
 }
 
 function sendUpdateEmail(registration, editBaseUrl) {
   try {
     const email = String(registration.captainEmail || '').trim();
-    if (!email) return false;
+    if (!email) return { ok: false, error: 'Nav norādīts kapteiņa e-pasts.' };
 
     const subject = 'Pārgājiena pieteikums ir atjaunināts';
     const plainBody = [
@@ -686,15 +779,14 @@ function sendUpdateEmail(registration, editBaseUrl) {
       htmlBody,
     });
   } catch (error) {
-    console.error(error);
-    return false;
+    return { ok: false, error: getErrorMessage(error) };
   }
 }
 
 function sendCancelEmail(registration, editBaseUrl) {
   try {
     const email = String(registration.captainEmail || '').trim();
-    if (!email) return false;
+    if (!email) return { ok: false, error: 'Nav norādīts kapteiņa e-pasts.' };
 
     const subject = 'Pārgājiena pieteikums ir atsaukts';
     const plainBody = [
@@ -722,9 +814,95 @@ function sendCancelEmail(registration, editBaseUrl) {
       htmlBody,
     });
   } catch (error) {
-    console.error(error);
-    return false;
+    return { ok: false, error: getErrorMessage(error) };
   }
+}
+
+
+function resendConfirmationEmailForRow(rowNumber) {
+  const numericRow = Number(rowNumber);
+
+  if (!numericRow || numericRow < 2) {
+    Logger.log('Norādiet Google Sheet rindas numuru, sākot no 2. rindas.');
+    return;
+  }
+
+  const sheet = getSheet();
+  const map = getHeaderMap(sheet);
+  const row = sheet.getRange(numericRow, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const registration = rowToObject(row, map);
+
+  if (!registration.editCode) {
+    Logger.log('Rinda ' + numericRow + ': nav pieteikuma labošanas koda.');
+    return;
+  }
+
+  if (registration.status === STATUSES.CANCELLED) {
+    Logger.log('Rinda ' + numericRow + ': pieteikums ir atsaukts.');
+    return;
+  }
+
+  const editLink = buildEditLink(PUBLIC_EDIT_BASE_URL, registration.editCode);
+  const result = sendCreateEmail({
+    teamName: registration.teamName,
+    participationCity: registration.participationCity,
+    distance: registration.distance,
+    captainEmail: registration.captainEmail,
+    editBaseUrl: PUBLIC_EDIT_BASE_URL,
+    participants: registration.participants || [],
+  }, registration.editCode, editLink);
+
+  markEmailResult(sheet, numericRow, result);
+  Logger.log('Rinda ' + numericRow + ': ' + registration.captainEmail + ' — ' + (result.ok ? 'nosūtīts' : 'neizdevās: ' + result.error));
+}
+
+function resendFailedConfirmationEmails() {
+  const sheet = getSheet();
+  const map = getHeaderMap(sheet);
+  const values = sheet.getDataRange().getValues();
+  const statusIndex = map['E-pasts nosūtīts'];
+  let sent = 0;
+  let failed = 0;
+  let skipped = 0;
+
+  for (let rowIndex = 1; rowIndex < values.length; rowIndex += 1) {
+    const rowNumber = rowIndex + 1;
+    const row = values[rowIndex];
+    const registration = rowToObject(row, map);
+    const emailStatus = typeof statusIndex === 'number' ? String(row[statusIndex] || '').trim() : '';
+
+    if (registration.status === STATUSES.CANCELLED || emailStatus === 'Jā') {
+      skipped += 1;
+      continue;
+    }
+
+    if (!registration.editCode || !registration.captainEmail) {
+      markEmailResult(sheet, rowNumber, { ok: false, error: 'Trūkst pieteikuma koda vai kapteiņa e-pasta.' });
+      failed += 1;
+      continue;
+    }
+
+    const editLink = buildEditLink(PUBLIC_EDIT_BASE_URL, registration.editCode);
+    const result = sendCreateEmail({
+      teamName: registration.teamName,
+      participationCity: registration.participationCity,
+      distance: registration.distance,
+      captainEmail: registration.captainEmail,
+      editBaseUrl: PUBLIC_EDIT_BASE_URL,
+      participants: registration.participants || [],
+    }, registration.editCode, editLink);
+
+    markEmailResult(sheet, rowNumber, result);
+
+    if (result.ok) {
+      sent += 1;
+    } else {
+      failed += 1;
+      Logger.log('Rinda ' + rowNumber + ' neizdevās: ' + result.error);
+    }
+  }
+
+  Logger.log('Atkārtota sūtīšana pabeigta. Nosūtīti: ' + sent + ', neizdevās: ' + failed + ', izlaisti: ' + skipped + '.');
 }
 
 function escapeHtml(value) {
@@ -775,4 +953,11 @@ function authorizeScript() {
   getSheet();
   MailApp.getRemainingDailyQuota();
   GmailApp.getAliases();
+}
+
+function checkEmailSetup() {
+  Logger.log('Effective user email: ' + Session.getEffectiveUser().getEmail());
+  Logger.log('Configured sender email: ' + SENDER_EMAIL);
+  Logger.log('Available Gmail aliases: ' + JSON.stringify(GmailApp.getAliases()));
+  Logger.log('Remaining daily mail quota: ' + MailApp.getRemainingDailyQuota());
 }

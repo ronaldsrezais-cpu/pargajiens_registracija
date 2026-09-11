@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useRef, useState } from 'react';
-import { cityDistances, cityEventDates, participationCities, type ParticipationCity } from '../content';
+import { cityDistances, cityEventDates, editDeadlineDisplay, editDeadlineIso, participationCities, type ParticipationCity } from '../content';
 
 type MessageState = {
   type: 'success' | 'error' | 'info';
@@ -38,6 +38,11 @@ function getParticipantsFromRegistration(registration: Partial<RegistrationData>
   return [registration.participant1, registration.participant2, registration.participant3, registration.participant4]
     .map((value) => String(value || ''))
     .filter(Boolean);
+}
+
+
+function isEditDeadlinePassed() {
+  return Date.now() >= new Date(editDeadlineIso).getTime();
 }
 
 function emptyRegistration(editCode = ''): RegistrationData {
@@ -173,6 +178,11 @@ export default function ManageRegistrationPage() {
 
     if (!registration) return;
 
+    if (isEditDeadlinePassed()) {
+      setMessage({ type: 'error', text: `Labojumu veikšana ir slēgta. Labojumi un personalizētie numuri bija iespējami līdz ${editDeadlineDisplay}.` });
+      return;
+    }
+
     setIsSaving(true);
     setMessage(null);
 
@@ -247,6 +257,8 @@ export default function ManageRegistrationPage() {
   const selectedCity = registration?.participationCity || '';
   const availableDistances = selectedCity ? cityDistances[selectedCity] : [];
   const isCancelled = registration?.status === 'Atsaukts';
+  const editDeadlinePassed = isEditDeadlinePassed();
+  const editFieldsDisabled = isCancelled || editDeadlinePassed;
 
   return (
     <main className="page-shell">
@@ -288,13 +300,19 @@ export default function ManageRegistrationPage() {
               Statuss: {registration.status || 'Aktīvs'}
             </div>
 
+            {editDeadlinePassed && !isCancelled && (
+              <div className="form-message info">
+                Labojumu veikšana ir slēgta. Labojumi un personalizētie numuri bija iespējami līdz {editDeadlineDisplay}.
+              </div>
+            )}
+
             <label>
               Pilsēta *
               <select
                 required
                 value={registration.participationCity}
                 onChange={(event) => updateField('participationCity', event.target.value)}
-                disabled={isCancelled}
+                disabled={editFieldsDisabled}
               >
                 <option value="">Izvēlieties pilsētu</option>
                 {participationCities.map((city) => (
@@ -310,7 +328,7 @@ export default function ManageRegistrationPage() {
                 required
                 value={registration.distance}
                 onChange={(event) => updateField('distance', event.target.value)}
-                disabled={!selectedCity || isCancelled}
+                disabled={!selectedCity || editFieldsDisabled}
               >
                 <option value="">Izvēlieties distanci</option>
                 {availableDistances.map((distance) => (
@@ -321,12 +339,12 @@ export default function ManageRegistrationPage() {
 
             <label>
               Komandas nosaukums *
-              <input value={registration.teamName} onChange={(event) => updateField('teamName', event.target.value)} type="text" required disabled={isCancelled} />
+              <input value={registration.teamName} onChange={(event) => updateField('teamName', event.target.value)} type="text" required disabled={editFieldsDisabled} />
             </label>
 
             <label>
               Komandas pilsēta / novads *
-              <input value={registration.teamCity} onChange={(event) => updateField('teamCity', event.target.value)} type="text" required disabled={isCancelled} />
+              <input value={registration.teamCity} onChange={(event) => updateField('teamCity', event.target.value)} type="text" required disabled={editFieldsDisabled} />
             </label>
 
             <div className="members-block">
@@ -334,17 +352,17 @@ export default function ManageRegistrationPage() {
 
               <label>
                 Kapteinis *
-                <input value={registration.captainName} onChange={(event) => updateField('captainName', event.target.value)} type="text" required disabled={isCancelled} />
+                <input value={registration.captainName} onChange={(event) => updateField('captainName', event.target.value)} type="text" required disabled={editFieldsDisabled} />
               </label>
 
               <label>
                 Kapteiņa e-pasta adrese *
-                <input value={registration.captainEmail} onChange={(event) => updateField('captainEmail', event.target.value)} type="email" required disabled={isCancelled} />
+                <input value={registration.captainEmail} onChange={(event) => updateField('captainEmail', event.target.value)} type="email" required disabled={editFieldsDisabled} />
               </label>
 
               <label>
                 Kapteiņa tālruņa numurs *
-                <input value={registration.captainPhone} onChange={(event) => updateField('captainPhone', event.target.value)} type="tel" required disabled={isCancelled} />
+                <input value={registration.captainPhone} onChange={(event) => updateField('captainPhone', event.target.value)} type="tel" required disabled={editFieldsDisabled} />
               </label>
 
               {registration.participants.map((participant, index) => (
@@ -355,10 +373,10 @@ export default function ManageRegistrationPage() {
                       value={participant}
                       onChange={(event) => updateParticipant(index, event.target.value)}
                       type="text"
-                      disabled={isCancelled}
+                      disabled={editFieldsDisabled}
                     />
                   </label>
-                  {!isCancelled && (
+                  {!editFieldsDisabled && (
                     <button
                       type="button"
                       className="remove-participant-button"
@@ -371,7 +389,7 @@ export default function ManageRegistrationPage() {
                 </div>
               ))}
 
-              {!isCancelled && (
+              {!editFieldsDisabled && (
                 <div className="add-participant-block">
                   <span>Vai vēlaties pievienot vēl personas?</span>
                   <button type="button" className="small-action-button" onClick={addParticipant}>
@@ -389,6 +407,7 @@ export default function ManageRegistrationPage() {
                     checked={Boolean(registration.photoConsent)}
                     onChange={(event) => setRegistration({ ...registration, photoConsent: event.target.checked })}
                     required
+                    disabled={editFieldsDisabled}
                   />
                   <span>Apstiprinu, ka esmu informēts par fotografēšanu un filmēšanu #BeActive pārgājiena laikā un iegūto materiālu iespējamu izmantošanu LSFP un attiecīgās pārgājiena norises vietas organizatora komunikācijā. *</span>
                 </label>
@@ -399,6 +418,7 @@ export default function ManageRegistrationPage() {
                     checked={Boolean(registration.safetyConsent)}
                     onChange={(event) => setRegistration({ ...registration, safetyConsent: event.target.checked })}
                     required
+                    disabled={editFieldsDisabled}
                   />
                   <span>Apstiprinu, ka pārgājiena laikā ievērosim organizatoru norādījumus un drošības noteikumus, sekosim marķētajam maršrutam un saudzēsim dabu. Piesakot komandu izvēlētajai distancei, esmu pārliecinājies, ka tā atbilst manām un komandas biedru fiziskajām spējām, un apņemamies piedalīties atbildīgi un atbilstoši savām spējām. *</span>
                 </label>
@@ -409,6 +429,7 @@ export default function ManageRegistrationPage() {
                     checked={Boolean(registration.dataConsent)}
                     onChange={(event) => setRegistration({ ...registration, dataConsent: event.target.checked })}
                     required
+                    disabled={editFieldsDisabled}
                   />
                   <span>Apstiprinu datu izmantošanu pieteikuma apstrādei. *</span>
                 </label>
@@ -417,7 +438,7 @@ export default function ManageRegistrationPage() {
 
             {!isCancelled && (
               <div className="button-row">
-                <button type="submit" className="submit-button" disabled={isSaving}>
+                <button type="submit" className="submit-button" disabled={isSaving || editDeadlinePassed}>
                   {isSaving ? 'Saglabā…' : 'Saglabāt izmaiņas'}
                 </button>
 

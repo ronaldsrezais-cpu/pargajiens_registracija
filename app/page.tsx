@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useRef, useState } from 'react';
-import { cityDistances, cityEventDates, participationCities, type ParticipationCity } from './content';
+import { cityDistances, cityEventDates, deadlineMessage, participationCities, type ParticipationCity } from './content';
 
 type MessageState = {
   type: 'success' | 'error' | 'info';
@@ -239,7 +239,7 @@ export default function Home() {
         type: result.demoMode ? 'info' : 'success',
         text:
           result.message ||
-          'Paldies! Dalība apstiprināta!\nKapteiņa norādītajā e-pastā saņemsiet dalības apstiprinājumu, kā arī unikālo kodu pieteikuma labošanai vai atsaukšanai.\n\nPieteikšanās tiešsaistē un izmaiņu veikšana ir iespējama līdz 24. septembra plkst. 12.00.',
+          `Paldies! Dalība apstiprināta!\nKapteiņa norādītajā e-pastā saņemsiet dalības apstiprinājumu, kā arī unikālo kodu pieteikuma labošanai vai atsaukšanai.\n\n${deadlineMessage}`,
         editLink: result.editLink || managePageUrl,
         editCode: result.editCode,
       });

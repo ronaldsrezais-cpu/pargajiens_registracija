@@ -13,3 +13,8 @@ export const cityEventDates: Record<ParticipationCity, string> = {
 };
 
 export const participationCities = Object.keys(cityDistances) as ParticipationCity[];
+
+export const editDeadlineIso = '2026-09-21T15:00:00+03:00';
+export const editDeadlineDisplay = '21.09.2026. plkst. 15.00';
+export const deadlineMessage = `Labojumi un personalizētie numuri iespējami līdz ${editDeadlineDisplay}.`;
+
