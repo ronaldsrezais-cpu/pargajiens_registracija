@@ -128,7 +128,7 @@ export async function POST(request: Request) {
 
     const deadlineNote = deadlineMessage;
     const emailNote = result.emailSent === false
-      ? 'Pieteikums ir saglabāts, bet apstiprinājuma e-pastu neizdevās nosūtīt. Ja nepieciešams, sazinieties ar organizatoriem.'
+      ? 'Kapteiņa norādītajā e-pastā dalības apstiprinājums, kā arī unikālais kods pieteikuma labošanai vai atsaukšanai tiks nosūtīts 24 stundu laikā.'
       : 'Kapteiņa norādītajā e-pastā saņemsiet dalības apstiprinājumu, kā arī unikālo kodu pieteikuma labošanai vai atsaukšanai.';
 
     return NextResponse.json({

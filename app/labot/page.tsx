@@ -179,7 +179,7 @@ export default function ManageRegistrationPage() {
     if (!registration) return;
 
     if (isEditDeadlinePassed()) {
-      setMessage({ type: 'error', text: `Labojumu veikšana ir slēgta. Labojumi un personalizētie numuri bija iespējami līdz ${editDeadlineDisplay}.` });
+      setMessage({ type: 'error', text: `Labojumu veikšana ir slēgta. Pieteikuma labojumus varēja veikt un dalībniekus iepriekš sagatavotu personalizēto numuru saņemšanai pieteikt līdz ${editDeadlineDisplay}.` });
       return;
     }
 
@@ -302,7 +302,7 @@ export default function ManageRegistrationPage() {
 
             {editDeadlinePassed && !isCancelled && (
               <div className="form-message info">
-                Labojumu veikšana ir slēgta. Labojumi un personalizētie numuri bija iespējami līdz {editDeadlineDisplay}.
+                Labojumu veikšana ir slēgta. Pieteikuma labojumus varēja veikt un dalībniekus iepriekš sagatavotu personalizēto numuru saņemšanai pieteikt līdz {editDeadlineDisplay}.
               </div>
             )}
 

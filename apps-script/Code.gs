@@ -492,7 +492,7 @@ function updateRegistration(data) {
   }
 
   if (isEditDeadlinePassed()) {
-    return jsonResponse({ ok: false, message: `Labojumu veikšana ir slēgta. Labojumi un personalizētie numuri bija iespējami līdz ${EDIT_DEADLINE_DISPLAY}.` });
+    return jsonResponse({ ok: false, message: `Labojumu veikšana ir slēgta. Pieteikuma labojumus varēja veikt un dalībniekus iepriekš sagatavotu personalizēto numuru saņemšanai pieteikt līdz ${EDIT_DEADLINE_DISPLAY}.` });
   }
 
   if (!isValidCityAndDistance(data.participationCity, data.distance)) {
@@ -694,11 +694,11 @@ function sendEmailMessage(options) {
 }
 
 function getDeadlinePlain() {
-  return `Labojumi un personalizētie numuri iespējami līdz ${EDIT_DEADLINE_DISPLAY}.`;
+  return `Pieteikuma labojumus var veikt un dalībniekus iepriekš sagatavotu personalizēto numuru saņemšanai pieteikt līdz ${EDIT_DEADLINE_DISPLAY}.`;
 }
 
 function getDeadlineHtml() {
-  return `<p>Labojumi un personalizētie numuri iespējami līdz <strong>${EDIT_DEADLINE_DISPLAY}</strong>.</p>`;
+  return `<p>Pieteikuma labojumus var veikt un dalībniekus iepriekš sagatavotu personalizēto numuru saņemšanai pieteikt līdz <strong>${EDIT_DEADLINE_DISPLAY}</strong>.</p>`;
 }
 
 function sendCreateEmail(data, editCode, editLink) {
