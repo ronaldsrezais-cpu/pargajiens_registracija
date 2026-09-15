@@ -96,7 +96,7 @@ export async function POST(request: Request) {
     if (body.action === 'update') {
       if (isEditDeadlinePassed()) {
         return NextResponse.json(
-          { ok: false, message: `Labojumu veikšana ir slēgta. Pieteikuma labojumus varēja veikt un dalībniekus iepriekš sagatavotu personalizēto numuru saņemšanai pieteikt līdz ${editDeadlineDisplay}.` },
+          { ok: false, message: `Labojumu veikšana ir slēgta. Labojumi un personalizētie numuri bija iespējami līdz ${editDeadlineDisplay}.` },
           { status: 403 }
         );
       }
