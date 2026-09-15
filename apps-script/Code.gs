@@ -694,11 +694,11 @@ function sendEmailMessage(options) {
 }
 
 function getDeadlinePlain() {
-  return `Līdz ${EDIT_DEADLINE_DISPLAY} iespējams veikt pieteikuma labojumus un pieteikt dalībniekus, lai pasākuma dienā viņiem būtu sagatavoti personalizēti numuri.`;
+  return `Līdz ${EDIT_DEADLINE_DISPLAY} iespējams veikt pieteikuma labojumus un pieteikt dalībniekus, lai pasākuma dienā būtu sagatavoti personalizēti dalībnieku numuri. Pieteikšanās būs iespējama arī pēc šī termiņa, taču dalībnieki numurzīmes varēs personalizēt paši pasākuma norises vietā.`;
 }
 
 function getDeadlineHtml() {
-  return `<p>Līdz <strong>${EDIT_DEADLINE_DISPLAY}</strong> iespējams veikt pieteikuma labojumus un pieteikt dalībniekus, lai pasākuma dienā viņiem būtu sagatavoti personalizēti numuri.</p>`;
+  return `<p>Līdz <strong>${EDIT_DEADLINE_DISPLAY}</strong> iespējams veikt pieteikuma labojumus un pieteikt dalībniekus, lai pasākuma dienā būtu sagatavoti personalizēti dalībnieku numuri. Pieteikšanās būs iespējama arī pēc šī termiņa, taču dalībnieki numurzīmes varēs personalizēt paši pasākuma norises vietā.</p>`;
 }
 
 function sendCreateEmail(data, editCode, editLink) {

@@ -16,5 +16,5 @@ export const participationCities = Object.keys(cityDistances) as ParticipationCi
 
 export const editDeadlineIso = '2026-09-21T15:00:00+03:00';
 export const editDeadlineDisplay = '21.09.2026. plkst. 15.00';
-export const deadlineMessage = `Līdz ${editDeadlineDisplay} iespējams veikt pieteikuma labojumus un pieteikt dalībniekus, lai pasākuma dienā viņiem būtu sagatavoti personalizēti numuri.`;
+export const deadlineMessage = `Līdz ${editDeadlineDisplay} iespējams veikt pieteikuma labojumus un pieteikt dalībniekus, lai pasākuma dienā būtu sagatavoti personalizēti dalībnieku numuri. Pieteikšanās būs iespējama arī pēc šī termiņa, taču dalībnieki numurzīmes varēs personalizēt paši pasākuma norises vietā.`;
 
