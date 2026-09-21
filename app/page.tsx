@@ -377,7 +377,6 @@ export default function Home() {
             {isSubmitting ? 'Nosūta…' : 'Nosūtīt pieteikumu'}
           </button>
 
-          <a className="manage-link" href="/labot">Labot vai atsaukt pieteikumu</a>
         </form>
 
         <RegistrationStats refreshKey={statsRefreshKey} />
