@@ -25,7 +25,9 @@ type AppsScriptResponse = {
   message?: string;
   editCode?: string;
   editLink?: string;
-  emailSent?: boolean;
+  emailSent?: boolean | null;
+  afterDeadline?: boolean;
+  emailNotRequired?: boolean;
 };
 
 const PUBLIC_EDIT_BASE_URL = 'https://beactive.lv/pargajiens/labot/';
@@ -126,17 +128,30 @@ export async function POST(request: Request) {
       );
     }
 
+    // Pēc 21.09.2026. plkst. 15.00 Latvijas laika Apps Script
+    // vairs nesūta apstiprinājuma e-pastu un neatgriež labošanas kodu/saite.
+    if (result.afterDeadline) {
+      return NextResponse.json({
+        ok: true,
+        afterDeadline: true,
+        message:
+          'Paldies! Dalība apstiprināta!\n\n' +
+          'Reģistrācija joprojām ir iespējama, taču personalizēto dalībnieku numuru sagatavošanas termiņš ir beidzies. ' +
+          'Numurzīmi būs iespējams personalizēt pasākuma norises vietā.\n\n' +
+          'Komandu kapteiņi pirms došanās distancē saņems gan distances karti drukātā formātā, gan GPX formātā. ' +
+          'GPX fails tiks nosūtīts uz e-pastu pārgājiena nedēļas piektdienā.',
+      });
+    }
+
     const deadlineNote = deadlineMessage;
+
     const emailNote = result.emailSent === false
       ? 'Kapteiņa norādītajā e-pastā dalības apstiprinājums, kā arī unikālais kods pieteikuma labošanai vai atsaukšanai tiks nosūtīts 24 stundu laikā.'
       : 'Kapteiņa norādītajā e-pastā saņemsiet dalības apstiprinājumu, kā arī unikālo kodu pieteikuma labošanai vai atsaukšanai.';
 
     return NextResponse.json({
       ok: true,
-      message: `Paldies! Dalība apstiprināta!
-${emailNote}
-
-${deadlineNote}`,
+      message: `Paldies! Dalība apstiprināta!\n${emailNote}\n\n${deadlineNote}`,
       editCode: result.editCode,
       editLink: result.editLink,
     });
