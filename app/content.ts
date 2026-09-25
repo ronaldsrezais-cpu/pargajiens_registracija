@@ -18,3 +18,6 @@ export const editDeadlineIso = '2026-09-21T15:00:00+03:00';
 export const editDeadlineDisplay = '21.09.2026. plkst. 15.00';
 export const deadlineMessage = `Līdz ${editDeadlineDisplay} iespējams veikt pieteikuma labojumus un pieteikt dalībniekus, lai pasākuma dienā būtu sagatavoti personalizēti dalībnieku numuri. Pieteikšanās būs iespējama arī pēc šī termiņa, taču dalībnieki numurzīmes varēs personalizēt paši pasākuma norises vietā.`;
 
+
+export const registrationCloseIso = '2026-09-25T12:00:00+03:00';
+export const registrationClosedMessage = 'Tiešsaistes reģistrācija #BeActive Pārgājienam 2026 ir noslēgusies. Reģistrēties dalībai joprojām būs iespējams pasākuma dienā uz vietas – reģistrācijas teltī.';
