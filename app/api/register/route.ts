@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { cityDistances, deadlineMessage, type ParticipationCity } from '../../content';
+import { cityDistances, deadlineMessage, registrationClosedMessage, registrationCloseIso, type ParticipationCity } from '../../content';
 import { GOOGLE_APPS_SCRIPT_URL } from '../../settings';
 
 type RegistrationPayload = {
@@ -57,9 +57,20 @@ function getEditBaseUrl(request: Request) {
   return `${origin}/labot`;
 }
 
+function isRegistrationClosed() {
+  return Date.now() >= new Date(registrationCloseIso).getTime();
+}
+
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as RegistrationPayload;
+
+    if (isRegistrationClosed()) {
+      return NextResponse.json(
+        { ok: false, message: registrationClosedMessage },
+        { status: 403 }
+      );
+    }
 
     const missingFields = requiredFields.filter((field) => !body[field]);
     if (missingFields.length > 0) {
