@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useRef, useState } from 'react';
-import { cityDistances, cityEventDates, deadlineMessage, participationCities, type ParticipationCity } from './content';
+import { cityDistances, cityEventDates, deadlineMessage, participationCities, registrationClosedMessage, registrationCloseIso, type ParticipationCity } from './content';
 
 type MessageState = {
   type: 'success' | 'error' | 'info';
@@ -170,6 +170,7 @@ export default function Home() {
   const [selectedCity, setSelectedCity] = useState<ParticipationCity | ''>('');
   const [additionalParticipants, setAdditionalParticipants] = useState<string[]>([]);
   const [statsRefreshKey, setStatsRefreshKey] = useState(0);
+  const [registrationClosed, setRegistrationClosed] = useState(false);
   const messageRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -179,6 +180,18 @@ export default function Home() {
       });
     }
   }, [message]);
+
+  useEffect(() => {
+    const closeAt = new Date(registrationCloseIso).getTime();
+    const updateClosedState = () => setRegistrationClosed(Date.now() >= closeAt);
+
+    updateClosedState();
+    const remainingMs = closeAt - Date.now();
+    if (remainingMs <= 0) return;
+
+    const timer = window.setTimeout(updateClosedState, remainingMs + 250);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const availableDistances = selectedCity ? cityDistances[selectedCity] : [];
 
@@ -266,118 +279,124 @@ export default function Home() {
           <h1 id="registration-title">Pieteikšanās pārgājienam</h1>
         </div>
 
-        <form className="registration-form" onSubmit={handleSubmit}>
-          {message && (
-            <div ref={messageRef} className={`form-message ${message.type}`}>
-              <p>{message.text}</p>
-            </div>
-          )}
+        {registrationClosed ? (
+          <div className="form-message info">
+            <p>{registrationClosedMessage}</p>
+          </div>
+        ) : (
+          <form className="registration-form" onSubmit={handleSubmit}>
+            {message && (
+              <div ref={messageRef} className={`form-message ${message.type}`}>
+                <p>{message.text}</p>
+              </div>
+            )}
 
-          <label>
-            Pilsēta *
-            <select
-              name="participationCity"
-              required
-              value={selectedCity}
-              onChange={(event) => setSelectedCity(event.target.value as ParticipationCity | '')}
-            >
-              <option value="">Izvēlieties pilsētu</option>
-              {participationCities.map((city) => (
-                <option key={city} value={city}>{city} — {cityEventDates[city]}</option>
+            <label>
+              Pilsēta *
+              <select
+                name="participationCity"
+                required
+                value={selectedCity}
+                onChange={(event) => setSelectedCity(event.target.value as ParticipationCity | '')}
+              >
+                <option value="">Izvēlieties pilsētu</option>
+                {participationCities.map((city) => (
+                  <option key={city} value={city}>{city} — {cityEventDates[city]}</option>
+                ))}
+              </select>
+              {selectedCity && <span className="field-help">Norises datums: {cityEventDates[selectedCity]}</span>}
+            </label>
+
+            <label>
+              Distance *
+              <select name="distance" required disabled={!selectedCity}>
+                <option value="">Izvēlieties distanci</option>
+                {availableDistances.map((distance) => (
+                  <option key={distance} value={distance}>{distance}</option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              Komandas nosaukums *
+              <input name="teamName" type="text" required />
+            </label>
+
+            <label>
+              Komandas pilsēta / novads *
+              <input name="teamCity" type="text" required />
+            </label>
+
+            <div className="members-block">
+              <h2>Dalībnieki</h2>
+
+              <label>
+                Kapteinis *
+                <input name="captainName" type="text" required />
+              </label>
+
+              <label>
+                Kapteiņa e-pasta adrese *
+                <input name="captainEmail" type="email" required />
+              </label>
+
+              <label>
+                Kapteiņa tālruņa numurs *
+                <input name="captainPhone" type="tel" required />
+              </label>
+
+              {additionalParticipants.map((participant, index) => (
+                <div className="participant-field" key={`participant-${index}`}>
+                  <label>
+                    Dalībnieks {index + 2} (vārds)
+                    <input
+                      value={participant}
+                      onChange={(event) => updateAdditionalParticipant(index, event.target.value)}
+                      type="text"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    className="remove-participant-button"
+                    onClick={() => removeAdditionalParticipant(index)}
+                    aria-label={`Dzēst dalībnieku ${index + 2}`}
+                  >
+                    ×
+                  </button>
+                </div>
               ))}
-            </select>
-            {selectedCity && <span className="field-help">Norises datums: {cityEventDates[selectedCity]}</span>}
-          </label>
 
-          <label>
-            Distance *
-            <select name="distance" required disabled={!selectedCity}>
-              <option value="">Izvēlieties distanci</option>
-              {availableDistances.map((distance) => (
-                <option key={distance} value={distance}>{distance}</option>
-              ))}
-            </select>
-          </label>
-
-          <label>
-            Komandas nosaukums *
-            <input name="teamName" type="text" required />
-          </label>
-
-          <label>
-            Komandas pilsēta / novads *
-            <input name="teamCity" type="text" required />
-          </label>
-
-          <div className="members-block">
-            <h2>Dalībnieki</h2>
-
-            <label>
-              Kapteinis *
-              <input name="captainName" type="text" required />
-            </label>
-
-            <label>
-              Kapteiņa e-pasta adrese *
-              <input name="captainEmail" type="email" required />
-            </label>
-
-            <label>
-              Kapteiņa tālruņa numurs *
-              <input name="captainPhone" type="tel" required />
-            </label>
-
-            {additionalParticipants.map((participant, index) => (
-              <div className="participant-field" key={`participant-${index}`}>
-                <label>
-                  Dalībnieks {index + 2} (vārds)
-                  <input
-                    value={participant}
-                    onChange={(event) => updateAdditionalParticipant(index, event.target.value)}
-                    type="text"
-                  />
-                </label>
-                <button
-                  type="button"
-                  className="remove-participant-button"
-                  onClick={() => removeAdditionalParticipant(index)}
-                  aria-label={`Dzēst dalībnieku ${index + 2}`}
-                >
-                  ×
+              <div className="add-participant-block">
+                <span>Vai vēlaties pievienot vēl personas?</span>
+                <button type="button" className="small-action-button" onClick={addAdditionalParticipant}>
+                  Jā
                 </button>
               </div>
-            ))}
-
-            <div className="add-participant-block">
-              <span>Vai vēlaties pievienot vēl personas?</span>
-              <button type="button" className="small-action-button" onClick={addAdditionalParticipant}>
-                Jā
-              </button>
             </div>
-          </div>
 
-          <div className="consent-list">
-            <label className="checkbox-label">
-              <input type="checkbox" name="photoConsent" required />
-              <span>Apstiprinu, ka esmu informēts par fotografēšanu un filmēšanu #BeActive pārgājiena laikā un iegūto materiālu iespējamu izmantošanu LSFP un attiecīgās pārgājiena norises vietas organizatora komunikācijā. *</span>
-            </label>
+            <div className="consent-list">
+              <label className="checkbox-label">
+                <input type="checkbox" name="photoConsent" required />
+                <span>Apstiprinu, ka esmu informēts par fotografēšanu un filmēšanu #BeActive pārgājiena laikā un iegūto materiālu iespējamu izmantošanu LSFP un attiecīgās pārgājiena norises vietas organizatora komunikācijā. *</span>
+              </label>
 
-            <label className="checkbox-label">
-              <input type="checkbox" name="safetyConsent" required />
-              <span>Apstiprinu, ka pārgājiena laikā ievērosim organizatoru norādījumus un drošības noteikumus, sekosim marķētajam maršrutam un saudzēsim dabu. Piesakot komandu izvēlētajai distancei, esmu pārliecinājies, ka tā atbilst manām un komandas biedru fiziskajām spējām, un apņemamies piedalīties atbildīgi un atbilstoši savām spējām. *</span>
-            </label>
+              <label className="checkbox-label">
+                <input type="checkbox" name="safetyConsent" required />
+                <span>Apstiprinu, ka pārgājiena laikā ievērosim organizatoru norādījumus un drošības noteikumus, sekosim marķētajam maršrutam un saudzēsim dabu. Piesakot komandu izvēlētajai distancei, esmu pārliecinājies, ka tā atbilst manām un komandas biedru fiziskajām spējām, un apņemamies piedalīties atbildīgi un atbilstoši savām spējām. *</span>
+              </label>
 
-            <label className="checkbox-label">
-              <input type="checkbox" name="dataConsent" required />
-              <span>Apstiprinu datu izmantošanu pieteikuma apstrādei. *</span>
-            </label>
-          </div>
+              <label className="checkbox-label">
+                <input type="checkbox" name="dataConsent" required />
+                <span>Apstiprinu datu izmantošanu pieteikuma apstrādei. *</span>
+              </label>
+            </div>
 
-          <button type="submit" className="submit-button" disabled={isSubmitting}>
-            {isSubmitting ? 'Nosūta…' : 'Nosūtīt pieteikumu'}
-          </button>
+            <button type="submit" className="submit-button" disabled={isSubmitting}>
+              {isSubmitting ? 'Nosūta…' : 'Nosūtīt pieteikumu'}
+            </button>
 
-        </form>
+          </form>
+        )}
 
         <RegistrationStats refreshKey={statsRefreshKey} />
       </section>
